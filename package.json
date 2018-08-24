@@ -1,0 +1,25 @@
+{
+  "name": "ghost-high-fiver",
+  "version": "0.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "parcel index.html",
+    "build": "parcel build --public-url ./ --no-source-maps --experimental-scope-hoisting index.html",
+    "clean": "rm -rf dist",
+    "zip": "npm run clean && NODE_ENV=production npm run build && pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.js && ls -lah game.zip && echo $(echo \"13312 - $(wc -c < game.zip)\" | bc) bytes remain",
+    "deploy": "npm run clean && npm run build && gh-pages -d dist/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel-bundler": "^1.9.7",
+    "typescript": "^3.0.1"
+  },
+  "dependencies": {},
+  "//browserslist": "Just to prevent parcel from causing babel to transpile anything and injecting regenerator runtime. Typescript already handles this.",
+  "browserslist": [
+    "chrome 69"
+  ]
+}
