@@ -55,3 +55,11 @@ Got fonts working, and preventing scrolling / zooming on mobile browsers (hopefu
 May need to change the pixel font. It's pretty harsh, even though it's the same I used for Night Shift Barista.
 
 Lisa worked on a Tarot card location, using 128 x 64.
+
+### 2018-09-01
+
+Spent some time getting Google Sync and Backup working. Super slow to get started.
+
+Got the preliminary Tarot card location in, and added Ghost Noise / Snow effect! Had to figure out some tricky Device Pixel Ratio math for Mobile Safari, since drawing from the same canvas was extremely slow (probably a mutex issue underneath?).
+
+Took a look at remaining budget: at first was only ~6k, but once I mangled some props it dropped. Took a while to understand that Parcel uses Terser under the hood, and that it could be configured with a `.terserrc` (or `.uglifyrc`).

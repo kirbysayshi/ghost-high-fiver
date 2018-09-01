@@ -1,6 +1,6 @@
 import { set, get } from "idb-keyval";
-import { Screen } from "./screen";
-import * as SpritesPath from "../assets/sprites.png";
+import { CreateScreenDesc } from "./screen";
+import * as SpritesPath from "../assets/LG-Tarot.png";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
 import { FontSheet, FontColor } from "./font-sheet";
@@ -22,7 +22,7 @@ enum Routes {
   // Splashhelp: Could be same as settings, but displays credits
 
   const cvs = document.querySelector("#c") as HTMLCanvasElement;
-  const screen = Screen(cvs, window.innerWidth, window.innerHeight, 1);
+  const screen = CreateScreenDesc(cvs, window.innerWidth, window.innerHeight, 1);
 
   const bgSheet = new SpriteSheet(SpritesPath.default);
   await bgSheet.load();
@@ -62,6 +62,32 @@ enum Routes {
     SpriteScale.TWO,
     FontColor.BLACK
   );
+
+  let running = true;
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      running = false;
+    }
+  })
+
+  // temporary, just to kill rendering on the phone.
+  spriteScreen.screen.cvs.addEventListener('touchstart', e => {
+    screen.ctx.fillStyle = 'red';
+    screen.ctx.fillRect(0, 0, screen.width, screen.height);
+    running = false;
+  })
+
+  requestAnimationFrame(function draw () {
+
+    spriteScreen.screen.ctx.clearRect(0, 0, spriteScreen.screen.width, spriteScreen.screen.height);
+    spriteScreen.drawImg(bgSheet.img, 0, 0, 128, 64, 0, 0, SpriteScale.TWO);
+    spriteScreen.ghostGlitch(128, 64, 32, 32);
+
+    if (running) {
+      requestAnimationFrame(draw);
+    }
+  })
+  
 
   // let route = await get('route');
 

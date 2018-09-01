@@ -4,16 +4,17 @@ export interface ScreenDesc {
   cvs: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   scale: number;
+  dpr: number;
   destroy: () => void;
 }
 
-export const Screen = (cvs: HTMLCanvasElement, width: number, height: number, scale: number): ScreenDesc => {
+export const CreateScreenDesc = (cvs: HTMLCanvasElement, width: number, height: number, scale: number): ScreenDesc => {
   const ctx = cvs.getContext('2d');
 
   cvs.style.margin = '0 auto';
   cvs.style.display = 'block';
 
-  const parent = cvs.parentNode.nodeName !== 'BODY'
+  const parent = cvs.parentNode && cvs.parentNode.nodeName !== 'BODY'
     ? cvs.parentNode
     : null;
 
@@ -55,6 +56,7 @@ export const Screen = (cvs: HTMLCanvasElement, width: number, height: number, sc
     cvs,
     ctx,
     scale,
+    dpr,
     destroy: () => {
       Object.keys(screen).map(k => delete screen[k]);
     }
