@@ -7,10 +7,11 @@
     "dev": "parcel index.html",
     "build": "parcel build --public-url ./ --no-source-maps --experimental-scope-hoisting index.html",
     "clean": "rm -rf dist",
+    "assets:optimize": "for a in assets/*; do convert $a PNG8:$a.png8; mv $a.png8 $a; done;",
     "zip:adv": "./tools/advzip.sh && advzip -z -4 -i 60 dist/game.zip",
     "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.js && popd",
     "zip:measure": "echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain",
-    "zip": "npm run clean && NODE_ENV=production npm run build && npm run zip:create && npm run zip:adv && npm run zip:measure",
+    "zip": "npm run clean && npm run assets:optimize && NODE_ENV=production npm run build && npm run zip:create && npm run zip:adv && npm run zip:measure",
     "deploy": "npm run clean && npm run build && gh-pages -d dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,7 +19,7 @@
   "license": "ISC",
   "devDependencies": {
     "parcel-bundler": "^1.9.7",
-    "typescript": "^3.0.1"
+    "typescript": "^3.0.3"
   },
   "dependencies": {
     "idb-keyval": "^3.1.0",
