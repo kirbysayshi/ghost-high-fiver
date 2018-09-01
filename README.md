@@ -50,7 +50,7 @@ Investigated how to scale / size the canvas, if we go with canvas at all. Mobile
 
 Sprite sheet loading, plus some code to draw with a fixed width, and potentially fluid height. Started working on importing font and text math.
 
-Got fonts working, and preventing scrolling / zooming on mobile browsers (hopefully). Added Device Pixel Ratio scaling to make for crisper pixels on HDPI devices, and I can definitely see the difference on my phone.
+Got fonts working, and preventing scrolling / zooming on mobile browsers (hopefully). Added Device Pixel Ratio scaling to make for crisper pixels on HDPI devices, and I can definitely see the difference on my phone. Layout is going to be very tricky, since you need to compute the final result of the previous element when stacking.
 
 May need to change the pixel font. It's pretty harsh, even though it's the same I used for Night Shift Barista.
 
