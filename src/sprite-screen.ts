@@ -1,4 +1,4 @@
-import { ScreenDesc, CreateScreenDesc } from "./screen";
+import { DPRScreen } from "./screen";
 
 export type SpritePixelUnit = number;
 
@@ -13,18 +13,13 @@ export class SpriteScreen {
   private ratio: number;
 
   height: SpritePixelUnit;
-  backbuffer: ScreenDesc;
+  backbuffer: DPRScreen;
 
-  constructor(public screen: ScreenDesc, public width: SpritePixelUnit) {
-    this.ratio = width / screen.width;
-    this.height = this.ratio * screen.height;
+  constructor(public dprScreen: DPRScreen, public width: SpritePixelUnit) {
+    this.ratio = width / dprScreen.width;
+    this.height = this.ratio * dprScreen.height;
 
-    this.backbuffer = CreateScreenDesc(
-      document.createElement("canvas"),
-      screen.width,
-      screen.height,
-      screen.scale
-    );
+    this.backbuffer = DPRScreen.Duplicate(dprScreen);
   }
 
   heightOf(h: number, scale: SpriteScale = SpriteScale.ONE) {
@@ -32,7 +27,7 @@ export class SpriteScreen {
   }
 
   drawImg(
-    img,
+    img: HTMLCanvasElement | HTMLImageElement,
     sx: number,
     sy: number,
     sw: number,
@@ -41,7 +36,7 @@ export class SpriteScreen {
     dy: SpritePixelUnit,
     scale = SpriteScale.ONE
   ) {
-    this.screen.ctx.drawImage(
+    this.dprScreen.ctx.drawImage(
       img,
       sx,
       sy,
@@ -68,17 +63,7 @@ export class SpriteScreen {
     // Not sure why dpr is needed to properly copy.
     // Using a copy to drawFrom _DRASTICALLY_ speeds up Mobile Safari.
     // From 100ms per frame to 1ms...
-    this.backbuffer.ctx.drawImage(
-      this.screen.cvs,
-      0,
-      0,
-      this.screen.cvs.width,
-      this.screen.cvs.height,
-      0,
-      0,
-      this.backbuffer.cvs.width / this.backbuffer.dpr,
-      this.backbuffer.cvs.height / this.backbuffer.dpr
-    );
+    this.backbuffer.drawFrom(this.dprScreen);
 
     let sx = this.projectToScreen(x);
     let sy = this.projectToScreen(y);
@@ -100,7 +85,7 @@ export class SpriteScreen {
       const ddx = Math.floor(sx + lineDest);
       const ddy = Math.floor(sy + i * lineHeight);
 
-      this.screen.ctx.drawImage(
+      this.dprScreen.ctx.drawImage(
         this.backbuffer.cvs,
         ssx,
         ssy,

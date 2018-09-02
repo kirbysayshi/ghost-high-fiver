@@ -1,9 +1,10 @@
 import { set, get } from "idb-keyval";
-import { CreateScreenDesc } from "./screen";
+import { DPRScreen } from "./screen";
 import * as SpritesPath from "../assets/LG-Tarot.png";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
 import { FontSheet, FontColor } from "./font-sheet";
+import { GameLoop } from "./loop";
 
 enum Routes {
   BOOT = "BOOT",
@@ -22,12 +23,12 @@ enum Routes {
   // Splashhelp: Could be same as settings, but displays credits
 
   const cvs = document.querySelector("#c") as HTMLCanvasElement;
-  const screen = CreateScreenDesc(cvs, window.innerWidth, window.innerHeight, 1);
+  const dprScreen = new DPRScreen(window.innerWidth, window.innerHeight, 1, cvs);
 
   const bgSheet = new SpriteSheet(SpritesPath.default);
   await bgSheet.load();
 
-  const spriteScreen = new SpriteScreen(screen, 256);
+  const spriteScreen = new SpriteScreen(dprScreen, 256);
   const fontSheet = new FontSheet(spriteScreen);
   await fontSheet.load();
 
@@ -54,40 +55,41 @@ enum Routes {
     spriteScreen.projectToScreen(64) +
       fontSheet.heightOf(SpriteScale.TWO) +
       fontSheet.heightOf(SpriteScale.TWO),
-    screen.cvs.width +
+    dprScreen.cvs.width +
       " " +
-      screen.cvs.height +
+      dprScreen.cvs.height +
       " " +
-      screen.cvs.getBoundingClientRect().width,
+      dprScreen.cvs.getBoundingClientRect().width,
     SpriteScale.TWO,
     FontColor.BLACK
   );
 
-  let running = true;
+  const gloop = GameLoop({
+    drawTime: 1000 / 60,
+    updateTime: 1000 / 10,
+    draw: (interp) => {
+      spriteScreen.dprScreen.ctx.clearRect(0, 0, spriteScreen.dprScreen.width, spriteScreen.dprScreen.height);
+      spriteScreen.drawImg(bgSheet.img, 0, 0, 128, 64, 0, 0, SpriteScale.TWO);
+      spriteScreen.ghostGlitch(128, 64, 32, 32);
+    },
+    update: (dt) => {
+
+    },
+  });
+
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      running = false;
+      gloop.stop();
     }
   })
 
   // temporary, just to kill rendering on the phone.
-  spriteScreen.screen.cvs.addEventListener('touchstart', e => {
-    screen.ctx.fillStyle = 'red';
-    screen.ctx.fillRect(0, 0, screen.width, screen.height);
-    running = false;
+  spriteScreen.dprScreen.cvs.addEventListener('touchstart', e => {
+    dprScreen.ctx.fillStyle = 'red';
+    dprScreen.ctx.fillRect(0, 0, screen.width, screen.height);
+    gloop.stop();
   })
 
-  requestAnimationFrame(function draw () {
-
-    spriteScreen.screen.ctx.clearRect(0, 0, spriteScreen.screen.width, spriteScreen.screen.height);
-    spriteScreen.drawImg(bgSheet.img, 0, 0, 128, 64, 0, 0, SpriteScale.TWO);
-    spriteScreen.ghostGlitch(128, 64, 32, 32);
-
-    if (running) {
-      requestAnimationFrame(draw);
-    }
-  })
-  
 
   // let route = await get('route');
 
@@ -110,5 +112,3 @@ document.addEventListener(
   },
   { passive: false }
 );
-
-console.log("hello!");
