@@ -72,6 +72,8 @@ State is so hard. I'm trying too hard to come up with something elegant. Tried s
 
 More state madness. Eventually went with a ECS / CES framework, [js13k-ecs](https://github.com/kutuluk/js13k-ecs), but spent way more time than I would have liked adding type annotations. Still not perfect, but at least the type checker complains at me!
 
+Spent a while looking for a new font. Might have a contender in M46_LOSTPET. But also M05_DOKOITSU A still looks good when I see it in Font Book. Just not when in the game due to pixel weirdness. Wanted to get state under control before revisiting font rendering.
+
 I _think_ mapping geo lat/long to a square map grid is working! Will have to tweak how far apart the cells are. Right now the entire world is only 160 sq ft... so tiny!
 
 Lisa finished a beach scene (hot dog!) and started on an abandoned warehouse scene!
