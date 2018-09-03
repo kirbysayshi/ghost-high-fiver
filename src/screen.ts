@@ -1,5 +1,5 @@
 export class DPRScreen {
-  public readonly ctx: CanvasRenderingContext2D;
+  public readonly ctx: CanvasRenderingContext2D | null = null;
   public readonly dpr: number;
 
   static Duplicate(source: DPRScreen) {
@@ -14,6 +14,13 @@ export class DPRScreen {
   ) {
     const ctx = cvs.getContext("2d");
     this.ctx = ctx;
+
+    if (!ctx) {
+      const m = 'Could not initiate canvas context!'
+      alert(m);
+      throw new Error(m)
+      return;
+    }
 
     cvs.style.margin = "0 auto";
     cvs.style.display = "block";
@@ -58,7 +65,7 @@ export class DPRScreen {
   }
 
   drawFrom (source: DPRScreen) {
-    this.ctx.drawImage(source.cvs,
+    this.ctx!.drawImage(source.cvs,
       0,
       0,
       source.cvs.width,

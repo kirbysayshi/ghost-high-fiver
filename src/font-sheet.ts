@@ -4,7 +4,7 @@ import { SpriteScreen, SpritePixelUnit, SpriteScale } from "./sprite-screen";
 
 const fontChrOrder =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.'-○✗❤★♪:█,";
-const fontChrWidths = {
+const fontChrWidths: {[key: string]: string} = {
   2: "ilI!.':,",
   3: "t1",
   4: "abcdefghjknopqrsuvxyzL?-",

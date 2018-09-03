@@ -36,7 +36,7 @@ export class SpriteScreen {
     dy: SpritePixelUnit,
     scale = SpriteScale.ONE
   ) {
-    this.dprScreen.ctx.drawImage(
+    this.dprScreen.ctx!.drawImage(
       img,
       sx,
       sy,
@@ -85,7 +85,7 @@ export class SpriteScreen {
       const ddx = Math.floor(sx + lineDest);
       const ddy = Math.floor(sy + i * lineHeight);
 
-      this.dprScreen.ctx.drawImage(
+      this.dprScreen.ctx!.drawImage(
         this.backbuffer.cvs,
         ssx,
         ssy,

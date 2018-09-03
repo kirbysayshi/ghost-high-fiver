@@ -85,7 +85,7 @@ export const GameLoop = ({
   const rAF: typeof window.requestAnimationFrame = window.requestAnimationFrame.bind(window);
 
   let accumulator = 0;
-  let raf: number = null;
+  let raf: number | null = null;
   let lastLoop = pnow();
   let lastFPS = pnow();
   let framesThisSecond = 0;
