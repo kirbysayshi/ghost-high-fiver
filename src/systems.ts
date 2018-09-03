@@ -1,5 +1,13 @@
 import { ECS, Selector, Entity, ComponentConstructor } from "js13k-ecs";
-import { Geo, GridMap, PlayerLocation } from "./components";
+import {
+  Geo,
+  GridMap,
+  PlayerLocation,
+  DrawableImage,
+  StaticPos,
+  DynamicPos
+} from "./components";
+import { SpriteScreen } from "./sprite-screen";
 
 // Some ECS helpers for known "singletons".
 
@@ -11,14 +19,14 @@ function firstEntity<T>(selector: Selector<T>): undefined | Entity<T> {
   return found;
 }
 
-function firstCmp<T>(selector: Selector<T>, Cmp: ComponentConstructor): T | undefined {
+function firstCmp<T>(
+  selector: Selector<T>,
+  Cmp: ComponentConstructor
+): T | undefined {
   const e = firstEntity(selector);
   if (!e) return undefined;
   return e.get<T>(Cmp);
 }
-
-
-
 
 export class GeoSystem {
   selector = this.ecs.select(Geo);
@@ -58,7 +66,7 @@ export class GeoSystem {
     });
   }
 
-  update(delta: number) {
+  update(dt: number) {
     this.selector.iterate(e => {
       const g = e.get<Geo>(Geo);
       if (!g) return;
@@ -74,8 +82,6 @@ export class GeoSystem {
   }
 }
 
-
-
 export class LocateSystem {
   geos = this.ecs.select<Geo>(Geo);
   maps = this.ecs.select<GridMap>(GridMap);
@@ -89,7 +95,7 @@ export class LocateSystem {
       const m = firstCmp<GridMap>(this.maps, GridMap);
 
       if (!m) return;
-      
+
       // TODO: after Geo exists, this will execute each time. Probably
       // should also be checking how old geo is?
 
@@ -97,18 +103,18 @@ export class LocateSystem {
       // Apparently 1/60th of a degree (a minute) is approximately 1 nautical mile!
 
       // GPS is only accurate to around 3-6 meters... so maybe each grid cell
-      // should be... 
+      // should be...
 
       const cellWidth = 20; // feet? which means the entire world is only 160 ft sq...
       const mapWidth = m.cols * cellWidth;
       const mapHeight = m.rows * cellWidth;
 
       // https://stackoverflow.com/a/2911469/169491
-      const x = mapWidth * (180 + g.pos.coords.longitude) / 360;
-      const y = mapHeight * (90 - g.pos.coords.latitude) / 180;
+      const x = (mapWidth * (180 + g.pos.coords.longitude)) / 360;
+      const y = (mapHeight * (90 - g.pos.coords.latitude)) / 180;
 
-      const col = Math.floor(x / mapWidth * m.cols);
-      const row = Math.floor(y / mapHeight * m.rows);
+      const col = Math.floor((x / mapWidth) * m.cols);
+      const row = Math.floor((y / mapHeight) * m.rows);
 
       const idx = m.colRowIndex(col, row);
 
@@ -120,5 +126,54 @@ export class LocateSystem {
         loc.index = idx;
       }
     }
+  }
+}
+
+export class DrawableSystem {
+  private statics = this.ecs.select<DrawableImage & StaticPos>(
+    DrawableImage,
+    StaticPos
+  );
+  private dynamics = this.ecs.select<DrawableImage & DynamicPos>(
+    DrawableImage,
+    DynamicPos
+  );
+
+  constructor(private ecs: ECS, private sscreen: SpriteScreen) {}
+
+  draw(interp: number) {
+    this.statics.iterate(e => {
+      const img = e.get<DrawableImage>(DrawableImage);
+      const pos = e.get<StaticPos>(StaticPos);
+      if (!img || !pos) return;
+      this.sscreen.drawImg(
+        img.drawable,
+        img.source.x,
+        img.source.y,
+        img.dims.x,
+        img.dims.y,
+        pos.cpos.x,
+        pos.cpos.y,
+        img.scale
+      );
+    });
+
+    this.dynamics.iterate(e => {
+      const img = e.get<DrawableImage>(DrawableImage);
+      const pos = e.get<DynamicPos>(DynamicPos);
+      if (!img || !pos) return;
+      const interpX = pos.ppos.x + ((pos.cpos.x - pos.ppos.x) * interp);
+      const interpY = pos.ppos.y + ((pos.cpos.y - pos.ppos.y) * interp);
+      this.sscreen.drawImg(
+        img.drawable,
+        img.source.x,
+        img.source.y,
+        img.dims.x,
+        img.dims.y,
+        interpX,
+        interpY,
+        img.scale
+      );
+    })
   }
 }

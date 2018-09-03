@@ -7,8 +7,16 @@ import { FontSheet, FontColor } from "./font-sheet";
 import { GameLoop } from "./loop";
 
 import ecs from "js13k-ecs";
-import { GeoSystem, LocateSystem } from "./systems";
-import { Geo, GridMap, PlayerLocation, MapCellKind } from "./components";
+import { GeoSystem, LocateSystem, DrawableSystem } from "./systems";
+import {
+  Geo,
+  GridMap,
+  PlayerLocation,
+  MapCellKind,
+  StaticPos,
+  DrawableImage,
+  DynamicPos
+} from "./components";
 
 console.log(ecs, ecs.create);
 
@@ -64,8 +72,17 @@ enum Routes {
   const fontSheet = new FontSheet(spriteScreen);
   await fontSheet.load();
 
-  ecs.register(Geo, GridMap, PlayerLocation);
-  ecs.process(new GeoSystem(ecs), new LocateSystem(ecs));
+  ecs.register(Geo, GridMap, PlayerLocation, DrawableImage, StaticPos, DynamicPos);
+  ecs.process(
+    new GeoSystem(ecs),
+    new LocateSystem(ecs),
+  );
+
+  // We have to manage our own list of systems that only deal with drawing.
+  const drawSystems = [
+    new DrawableSystem(ecs, spriteScreen)
+  ];
+
 
   ecs
     .create()
@@ -86,7 +103,19 @@ enum Routes {
     );
   ecs.create().add(new Geo());
 
-  spriteScreen.drawImg(bgSheet.img, 0, 0, 128, 64, 0, 0, SpriteScale.TWO);
+  // The location sheet?
+  // TODO: a Tag(name) component to be able to reference by constant?
+  ecs
+    .create()
+    .add(
+      new StaticPos({ x: 0, y: 0 }),
+      new DrawableImage(
+        bgSheet.img,
+        { x: 0, y: 0 },
+        { x: 128, y: 64 },
+        SpriteScale.TWO
+      )
+    );
 
   fontSheet.drawText(
     4,
@@ -124,35 +153,29 @@ enum Routes {
     drawTime: 1000 / 60,
     updateTime: 1000 / 10,
     draw: interp => {
-      // const s = provider.getState();
-
-      // if (s.volatile.errors) {
-      //   s.volatile.errors.forEach(({ message }) => {
-      //     // draw errors?
-      //     fontSheet.drawText(8, 8, message, SpriteScale.ONE, FontColor.BLACK);
-      //   });
-      // } else {
       spriteScreen.dprScreen.ctx!.clearRect(
         0,
         0,
         spriteScreen.dprScreen.width,
         spriteScreen.dprScreen.height
       );
-      spriteScreen.drawImg(bgSheet.img, 0, 0, 128, 64, 0, 0, SpriteScale.TWO);
+
+      for (let i = 0; i < drawSystems.length; i++) {
+        drawSystems[i].draw(interp);
+      }
+
       spriteScreen.ghostGlitch(128, 64, 32, 32);
-      // }
     },
     update: dt => {
       updateCount++;
-
       const stats = ecs.update(dt);
       if (updateCount % 60 === 0) {
-        console.log(stats);
+        console.log("update", stats);
       }
-
-      // effects.tick
     }
   });
+
+  // setTimeout(() => gloop.stop(), 0);
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {

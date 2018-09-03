@@ -1,3 +1,6 @@
+import { V2, copy, v2 } from "pocket-physics/src/v2";
+import { SpriteScale } from "./sprite-screen";
+
 export class Geo {
   constructor(
     public pending: boolean = false,
@@ -36,7 +39,7 @@ export class GridMap {
     return idx % this.rows;
   }
 
-  rowFor (idx: MapCellIndex) {
+  rowFor(idx: MapCellIndex) {
     return Math.floor(idx / this.rows);
   }
 }
@@ -44,6 +47,22 @@ export class GridMap {
 export class PlayerLocation {
   constructor(public index: MapCellIndex) {}
 }
-// export class Sprite {
-//   constructor()
-// }
+
+export class StaticPos {
+  constructor(public cpos: V2) {}
+}
+
+export class DynamicPos {
+  public ppos = copy(v2(), this.cpos);
+  public acel = v2();
+  constructor(public cpos: V2) {}
+}
+
+export class DrawableImage {
+  constructor(
+    public drawable: HTMLCanvasElement | HTMLImageElement,
+    public source: V2 = v2(),
+    public dims: V2 = v2(drawable.width, drawable.height),
+    public scale: SpriteScale = SpriteScale.ONE
+  ) {}
+}
