@@ -23,7 +23,7 @@ export class SpriteScreen {
   }
 
   heightOf(h: number, scale: SpriteScale = SpriteScale.ONE) {
-    return this.projectToScreen(h) * Math.floor(scale);
+    return this.pts(h) * Math.floor(scale);
   }
 
   drawImg(
@@ -42,14 +42,15 @@ export class SpriteScreen {
       sy,
       sw,
       sh,
-      this.projectToScreen(dx),
-      this.projectToScreen(dy),
-      this.projectToScreen(sw) * Math.floor(scale),
-      this.projectToScreen(sh) * Math.floor(scale)
+      this.pts(dx),
+      this.pts(dy),
+      this.pts(sw) * Math.floor(scale),
+      this.pts(sh) * Math.floor(scale)
     );
   }
 
-  projectToScreen(p: SpritePixelUnit) {
+  // projectToScreen
+  pts(p: SpritePixelUnit) {
     return p / this.ratio;
   }
 
@@ -65,12 +66,12 @@ export class SpriteScreen {
     // From 100ms per frame to 1ms...
     this.backbuffer.drawFrom(this.dprScreen);
 
-    let sx = this.projectToScreen(x);
-    let sy = this.projectToScreen(y);
-    let sw = this.projectToScreen(width);
-    let sh = this.projectToScreen(height);
+    let sx = this.pts(x);
+    let sy = this.pts(y);
+    let sw = this.pts(width);
+    let sh = this.pts(height);
 
-    const lines = Math.floor(sh / this.projectToScreen(1) / 2);
+    const lines = Math.floor(sh / this.pts(1) / 2);
     const incr = sh / lines;
 
     for (let i = 0; i < lines; i++) {

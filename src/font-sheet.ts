@@ -29,7 +29,7 @@ export class FontSheet {
   private white: SpriteSheet;
   private black: SpriteSheet;
 
-  constructor(private spriteScreen: SpriteScreen) {
+  constructor(private sscreen: SpriteScreen) {
     this.white = new SpriteSheet(FontPath.default);
     this.black = new SpriteSheet(FontPath.default);
   }
@@ -41,7 +41,7 @@ export class FontSheet {
   }
 
   heightOf (scale: SpriteScale = SpriteScale.ONE) {
-    return this.spriteScreen.heightOf(this.white.img.height, scale);
+    return this.sscreen.heightOf(this.white.img.height, scale);
   }
 
   drawText(
@@ -51,8 +51,8 @@ export class FontSheet {
     scale = SpriteScale.ONE,
     color = FontColor.BLACK
   ) {
-    let screenX = this.spriteScreen.projectToScreen(x);
-    let screenY = this.spriteScreen.projectToScreen(y);
+    let screenX = this.sscreen.pts(x);
+    let screenY = this.sscreen.pts(y);
 
     // scale *= 320 / 128;
 
@@ -73,7 +73,7 @@ export class FontSheet {
         const img =
           color === FontColor.WHITE ? this.white.img : this.black.img;
 
-        this.spriteScreen.drawImg(
+        this.sscreen.drawImg(
           img,
           sheetX,
           0,

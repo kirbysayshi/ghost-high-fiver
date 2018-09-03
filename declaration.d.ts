@@ -1,4 +1,5 @@
 declare module "*.png";
+declare module "*.bmp";
 
 // The official is missing the prefixed versions.
 interface CanvasRenderingContext2D {

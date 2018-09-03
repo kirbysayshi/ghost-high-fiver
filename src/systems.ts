@@ -4,10 +4,11 @@ import {
   GridMap,
   PlayerLocation,
   DrawableImage,
-  StaticPos,
-  DynamicPos
+  DynamicPos,
+  DrawableText
 } from "./components";
 import { SpriteScreen } from "./sprite-screen";
+import { FontSheet } from "./font-sheet";
 
 // Some ECS helpers for known "singletons".
 
@@ -130,10 +131,6 @@ export class LocateSystem {
 }
 
 export class DrawableSystem {
-  private statics = this.ecs.select<DrawableImage & StaticPos>(
-    DrawableImage,
-    StaticPos
-  );
   private dynamics = this.ecs.select<DrawableImage & DynamicPos>(
     DrawableImage,
     DynamicPos
@@ -142,28 +139,12 @@ export class DrawableSystem {
   constructor(private ecs: ECS, private sscreen: SpriteScreen) {}
 
   draw(interp: number) {
-    this.statics.iterate(e => {
-      const img = e.get<DrawableImage>(DrawableImage);
-      const pos = e.get<StaticPos>(StaticPos);
-      if (!img || !pos) return;
-      this.sscreen.drawImg(
-        img.drawable,
-        img.source.x,
-        img.source.y,
-        img.dims.x,
-        img.dims.y,
-        pos.cpos.x,
-        pos.cpos.y,
-        img.scale
-      );
-    });
-
     this.dynamics.iterate(e => {
       const img = e.get<DrawableImage>(DrawableImage);
       const pos = e.get<DynamicPos>(DynamicPos);
       if (!img || !pos) return;
-      const interpX = pos.ppos.x + ((pos.cpos.x - pos.ppos.x) * interp);
-      const interpY = pos.ppos.y + ((pos.cpos.y - pos.ppos.y) * interp);
+      const interpX = pos.ppos.x + (pos.cpos.x - pos.ppos.x) * interp;
+      const interpY = pos.ppos.y + (pos.cpos.y - pos.ppos.y) * interp;
       this.sscreen.drawImg(
         img.drawable,
         img.source.x,
@@ -174,6 +155,25 @@ export class DrawableSystem {
         interpY,
         img.scale
       );
-    })
+    });
+  }
+}
+
+export class DrawableTextSystem {
+  private dynamics = this.ecs.select<DrawableText & DynamicPos>(
+    DrawableText,
+    DynamicPos
+  );
+  constructor(private ecs: ECS, private fontSheet: FontSheet) {}
+
+  draw(interp: number) {
+    this.dynamics.iterate(e => {
+      const txt = e.get<DrawableText>(DrawableText);
+      const pos = e.get<DynamicPos>(DynamicPos);
+      if (!txt || !pos) return;
+      const interpX = pos.ppos.x + (pos.cpos.x - pos.ppos.x) * interp;
+      const interpY = pos.ppos.y + (pos.cpos.y - pos.ppos.y) * interp;
+      this.fontSheet.drawText(interpX, interpY, txt.text, txt.scale, txt.color);
+    });
   }
 }

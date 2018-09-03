@@ -1,21 +1,26 @@
 import { set, get } from "idb-keyval";
 import { DPRScreen } from "./screen";
-import * as SpritesPath from "../assets/LG-Tarot.png";
+import * as SpritesPath from "../assets/sprites.png";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
 import { FontSheet, FontColor } from "./font-sheet";
 import { GameLoop } from "./loop";
 
 import ecs from "js13k-ecs";
-import { GeoSystem, LocateSystem, DrawableSystem } from "./systems";
+import {
+  GeoSystem,
+  LocateSystem,
+  DrawableSystem,
+  DrawableTextSystem
+} from "./systems";
 import {
   Geo,
   GridMap,
   PlayerLocation,
   MapCellKind,
-  StaticPos,
   DrawableImage,
-  DynamicPos
+  DynamicPos,
+  DrawableText
 } from "./components";
 
 console.log(ecs, ecs.create);
@@ -68,21 +73,25 @@ enum Routes {
   const bgSheet = new SpriteSheet(SpritesPath.default);
   await bgSheet.load();
 
-  const spriteScreen = new SpriteScreen(dprScreen, 256);
-  const fontSheet = new FontSheet(spriteScreen);
+  const sscreen = new SpriteScreen(dprScreen, 256);
+  const fontSheet = new FontSheet(sscreen);
   await fontSheet.load();
 
-  ecs.register(Geo, GridMap, PlayerLocation, DrawableImage, StaticPos, DynamicPos);
-  ecs.process(
-    new GeoSystem(ecs),
-    new LocateSystem(ecs),
+  ecs.register(
+    Geo,
+    GridMap,
+    PlayerLocation,
+    DrawableImage,
+    DynamicPos,
+    DrawableText
   );
+  ecs.process(new GeoSystem(ecs), new LocateSystem(ecs));
 
   // We have to manage our own list of systems that only deal with drawing.
   const drawSystems = [
-    new DrawableSystem(ecs, spriteScreen)
+    new DrawableSystem(ecs, sscreen),
+    new DrawableTextSystem(ecs, fontSheet)
   ];
-
 
   ecs
     .create()
@@ -108,7 +117,7 @@ enum Routes {
   ecs
     .create()
     .add(
-      new StaticPos({ x: 0, y: 0 }),
+      new DynamicPos({ x: 0, y: 0 }),
       new DrawableImage(
         bgSheet.img,
         { x: 0, y: 0 },
@@ -117,35 +126,16 @@ enum Routes {
       )
     );
 
-  fontSheet.drawText(
-    4,
-    spriteScreen.projectToScreen(64),
-    "Location: THE FIRST ONE",
-    SpriteScale.TWO,
-    FontColor.BLACK
-  );
-
-  fontSheet.drawText(
-    0,
-    spriteScreen.projectToScreen(64) + fontSheet.heightOf(SpriteScale.TWO),
-    "Location: THE SECOND ONE",
-    SpriteScale.TWO,
-    FontColor.BLACK
-  );
-
-  fontSheet.drawText(
-    0,
-    spriteScreen.projectToScreen(64) +
-      fontSheet.heightOf(SpriteScale.TWO) +
-      fontSheet.heightOf(SpriteScale.TWO),
-    dprScreen.cvs.width +
-      " " +
-      dprScreen.cvs.height +
-      " " +
-      dprScreen.cvs.getBoundingClientRect().width,
-    SpriteScale.TWO,
-    FontColor.BLACK
-  );
+  ecs
+    .create()
+    .add(
+      new DynamicPos({ x: 4, y: sscreen.pts(64) }),
+      new DrawableText(
+        "Location: THE FIRST ONE",
+        FontColor.BLACK,
+        SpriteScale.TWO
+      )
+    );
 
   let updateCount = 0;
 
@@ -153,18 +143,18 @@ enum Routes {
     drawTime: 1000 / 60,
     updateTime: 1000 / 10,
     draw: interp => {
-      spriteScreen.dprScreen.ctx!.clearRect(
+      sscreen.dprScreen.ctx!.clearRect(
         0,
         0,
-        spriteScreen.dprScreen.width,
-        spriteScreen.dprScreen.height
+        sscreen.dprScreen.width,
+        sscreen.dprScreen.height
       );
 
       for (let i = 0; i < drawSystems.length; i++) {
         drawSystems[i].draw(interp);
       }
 
-      spriteScreen.ghostGlitch(128, 64, 32, 32);
+      sscreen.ghostGlitch(128, 64, 32, 32);
     },
     update: dt => {
       updateCount++;
@@ -175,7 +165,7 @@ enum Routes {
     }
   });
 
-  // setTimeout(() => gloop.stop(), 0);
+  setTimeout(() => gloop.stop(), 100);
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
@@ -184,7 +174,7 @@ enum Routes {
   });
 
   // temporary, just to kill rendering on the phone.
-  spriteScreen.dprScreen.cvs.addEventListener("touchstart", e => {
+  sscreen.dprScreen.cvs.addEventListener("touchstart", e => {
     dprScreen.ctx!.fillStyle = "red";
     dprScreen.ctx!.fillRect(0, 0, screen.width, screen.height);
     gloop.stop();

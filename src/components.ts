@@ -1,5 +1,6 @@
 import { V2, copy, v2 } from "pocket-physics/src/v2";
 import { SpriteScale } from "./sprite-screen";
+import { FontColor } from "./font-sheet";
 
 export class Geo {
   constructor(
@@ -48,10 +49,6 @@ export class PlayerLocation {
   constructor(public index: MapCellIndex) {}
 }
 
-export class StaticPos {
-  constructor(public cpos: V2) {}
-}
-
 export class DynamicPos {
   public ppos = copy(v2(), this.cpos);
   public acel = v2();
@@ -63,6 +60,14 @@ export class DrawableImage {
     public drawable: HTMLCanvasElement | HTMLImageElement,
     public source: V2 = v2(),
     public dims: V2 = v2(drawable.width, drawable.height),
+    public scale: SpriteScale = SpriteScale.ONE
+  ) {}
+}
+
+export class DrawableText {
+  constructor(
+    public text: string,
+    public color: FontColor = FontColor.BLACK,
     public scale: SpriteScale = SpriteScale.ONE
   ) {}
 }
