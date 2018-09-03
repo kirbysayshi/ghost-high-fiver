@@ -77,3 +77,15 @@ Spent a while looking for a new font. Might have a contender in M46_LOSTPET. But
 I _think_ mapping geo lat/long to a square map grid is working! Will have to tweak how far apart the cells are. Right now the entire world is only 160 sq ft... so tiny!
 
 Lisa finished a beach scene (hot dog!) and started on an abandoned warehouse scene!
+
+### 2018-09-03
+
+Brought pocket-physics in to use mostly for vectors/points, and wrote a TypeScript declaration for it. I'm getting better at that.
+
+js13k-ecs holds its systems in a closure, and I actually need access so I can separately call `draw` on render systems. I have two update loops, one for updating game state (10fps), and the other for drawing (60fps). Worked around by holding a separate array of draw-only systems.
+
+Lisa finished the abandoned warehouse scene.
+
+Got font rendering into ECS.
+
+Spent hours experimenting with optimizing the sprites. Tried making a zip with a dummy sprite sheet (Link's Awakening), it was over by 6KB! Terrifying. After playing with various tools (giflossy, optipng) and even trying plain BMP files (they compress via zip very nicely, actually), the winner is [tinypng.com](https://tinypng.com/), which provides an API key and curl support. Currently: `1099 bytes remain`. I don't know if the vision is possible right now.
