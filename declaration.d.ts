@@ -53,3 +53,25 @@ declare module 'js13k-ecs' {
 
   export default ecs;
 }
+
+declare module 'pocket-physics/src/v2' {
+
+  export type V2 = {
+    x: number;
+    y: number;
+  }
+
+  export function v2(x?: number, y?: number): V2;
+  export function copy(out: V2, a: V2): V2;
+  export function set(out: V2, x: number, y: number): V2;
+  export function add(out: V2, a: V2, b: V2): V2;
+  export function sub(out: V2, a: V2, b: V2): V2;
+  export function dot(a: V2, b: V2): number;
+  export function scale(out: V2, a: V2, factor: number): V2;
+  export function distance(a: V2, b: V2): number;
+  export function distance2(a: V2, b: V2): number;
+  export function magnitude(a: V2): number;
+  export function normalize(out: V2, a: V2): V2;
+  export function normal(out: V2, a: V2, b: V2): V2;
+  export function perpDot(a: V2, b: V2): number;
+}
