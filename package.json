@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "idb-keyval": "^3.1.0",
+    "js13k-ecs": "^0.1.2",
     "pwacompat": "^2.0.7"
   },
   "//browserslist": "Just to prevent parcel from causing babel to transpile anything and injecting regenerator runtime. Typescript already handles this.",
