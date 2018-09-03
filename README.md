@@ -65,3 +65,13 @@ Got the preliminary Tarot card location in, and added Ghost Noise / Snow effect!
 Took a look at remaining budget: at first was only ~6k, but once I mangled some props it dropped. Took a while to understand that Parcel uses Terser under the hood, and that it could be configured with a `.terserrc` (or `.uglifyrc`).
 
 Game loop!
+
+State is so hard. I'm trying too hard to come up with something elegant. Tried several Redux / React derivative approaches, and they're all probably more complicated than needed.
+
+### 2018-09-02
+
+More state madness. Eventually went with a ECS / CES framework, [js13k-ecs](https://github.com/kutuluk/js13k-ecs), but spent way more time than I would have liked adding type annotations. Still not perfect, but at least the type checker complains at me!
+
+I _think_ mapping geo lat/long to a square map grid is working! Will have to tweak how far apart the cells are. Right now the entire world is only 160 sq ft... so tiny!
+
+Lisa finished a beach scene (hot dog!) and started on an abandoned warehouse scene!
