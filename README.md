@@ -89,3 +89,21 @@ Lisa finished the abandoned warehouse scene.
 Got font rendering into ECS.
 
 Spent hours experimenting with optimizing the sprites. Tried making a zip with a dummy sprite sheet (Link's Awakening), it was over by 6KB! Terrifying. After playing with various tools (giflossy, optipng) and even trying plain BMP files (they compress via zip very nicely, actually), the winner is [tinypng.com](https://tinypng.com/), which provides an API key and curl support. Currently: `1099 bytes remain`. I don't know if the vision is possible right now.
+
+Started expanding the structure for MapCells to represent ghosts and their problems.
+
+js13k-ecs gives no access to entity creation, so there was no way to "clear" entities between different scenes. Or even to provide a hook. Spent way too much time trying to copy js13k-ecs's js into my local project, and add type annotations via a d.ts file. It is ridiculously hard to get this to work! No amount of `export`(s), `declare`, etc would allow it to be imported properly. This is a huge problem with TypeScript: often there is a library that needs a tweak, and I don't want to convert it to TS and have already written type definitons for it. But it's impossible to make a local copy of the code without converting it to TS! Or at least, I have not yet understood what magical syntax I need to make default export (which lots of libraries use) work with a local type file. Tried to then convert js13k-ecs to TypeScript, which is actually a huge job given how dynamic the API is. Went to bed frustrated: how will I ever finish this and in the size required?
+
+### 2018-09-04
+
+Abandoned a local copy of js13k-ecs, and instead wrote an ECSManager class that wraps it, and if entities are created tracks them.
+
+Then continued and made a SceneManager, which constructs / destroys entities automatically!
+
+Found some bugs in the font rendering (there are still more, it looks so bad) related to double scaling the positions.
+
+Created a FrameAction component/system that allows for arbitrary functions to execute once per frame. Cool, it's like script objects in GameMaker or something.
+
+Also make a Delayed component/system that is basically a relative scheduler. Made a "boot sequence" with it, with some hacky text manipulation for a RAM checksum :D
+
+Feeling good about this again. Scene manager + ECS manager are making things feel possible and experimental again!
