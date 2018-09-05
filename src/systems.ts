@@ -1,14 +1,17 @@
-import { ECS, Selector, Entity, ComponentConstructor } from "js13k-ecs";
+import { Selector, Entity, ComponentConstructor } from "js13k-ecs";
 import {
   Geo,
   GridMap,
   PlayerLocation,
   DrawableImage,
   DynamicPos,
-  DrawableText
+  DrawableText,
+  Delayed,
+  FrameAction
 } from "./components";
 import { SpriteScreen } from "./sprite-screen";
 import { FontSheet } from "./font-sheet";
+import { ECSMan } from "./ecsman";
 
 // Some ECS helpers for known "singletons".
 
@@ -31,7 +34,7 @@ function firstCmp<T>(
 
 export class GeoSystem {
   selector = this.ecs.select(Geo);
-  constructor(private ecs: ECS, private maxAge = 10000) {}
+  constructor(private ecs: ECSMan, private maxAge = 10000) {}
 
   private geoSuccess = (pos: Position) => {
     this.selector.iterate(e => {
@@ -87,7 +90,7 @@ export class LocateSystem {
   geos = this.ecs.select<Geo>(Geo);
   maps = this.ecs.select<GridMap>(GridMap);
   plocs = this.ecs.select<PlayerLocation>(PlayerLocation);
-  constructor(private ecs: ECS) {}
+  constructor(private ecs: ECSMan) {}
 
   update(dt: number) {
     const g = firstCmp<Geo>(this.geos, Geo);
@@ -136,7 +139,7 @@ export class DrawableSystem {
     DynamicPos
   );
 
-  constructor(private ecs: ECS, private sscreen: SpriteScreen) {}
+  constructor(private ecs: ECSMan, private sscreen: SpriteScreen) {}
 
   draw(interp: number) {
     this.dynamics.iterate(e => {
@@ -164,7 +167,7 @@ export class DrawableTextSystem {
     DrawableText,
     DynamicPos
   );
-  constructor(private ecs: ECS, private fontSheet: FontSheet) {}
+  constructor(private ecs: ECSMan, private fontSheet: FontSheet) {}
 
   draw(interp: number) {
     this.dynamics.iterate(e => {
@@ -175,5 +178,42 @@ export class DrawableTextSystem {
       const interpY = pos.ppos.y + (pos.cpos.y - pos.ppos.y) * interp;
       this.fontSheet.drawText(interpX, interpY, txt.text, txt.scale, txt.color);
     });
+  }
+}
+
+export class DelayedSystem {
+  private entities = this.ecs.select<Delayed>(Delayed);
+  constructor(private ecs: ECSMan) {}
+
+  update (dt: number) {
+    this.entities.iterate(e => {
+      const del = e.get<Delayed>(Delayed);
+      if (del) {
+        del.elapsed += dt;
+        if (del.elapsed > del.until) {
+          del.action(this.ecs);
+          if (Object.keys(e.components).length === 1) {
+            e.eject();
+          } else {
+            // Not sure how this case could come up, but whatever.
+            e.remove(Delayed);
+          }
+        }
+      }
+    })
+  }
+}
+
+export class FrameActionSystem {
+  private entities = this.ecs.select<FrameAction>(FrameAction);
+  constructor(private ecs: ECSMan) {}
+
+  update (dt: number) {
+    this.entities.iterate(e => {
+      const cmp = e.get<FrameAction>(FrameAction);
+      if (cmp) {
+        cmp.action(this.ecs, e);
+      }
+    })
   }
 }

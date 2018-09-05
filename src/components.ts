@@ -1,6 +1,8 @@
 import { V2, copy, v2 } from "pocket-physics/src/v2";
 import { SpriteScale } from "./sprite-screen";
 import { FontColor } from "./font-sheet";
+import { ECSMan } from "./ecsman";
+import { Entity } from "js13k-ecs";
 
 export class Geo {
   constructor(
@@ -19,16 +21,36 @@ export enum MapCellKind {
   CITY_STREET_CORNER
 }
 
+type GhostId = number;
+
+type GhostOptionIndex = number;
+
+type GhostOption = {
+  text: string;
+};
+
+type GhostProblem = {
+  prompt: string;
+  options: GhostOption[];
+  correct: GhostOptionIndex;
+};
+
+export type CellDesc = {
+  kind: MapCellKind;
+  ghost: GhostId;
+  problem: GhostProblem;
+};
+
 type MapCellIndex = number;
 
 export class GridMap {
   public readonly rows = Math.floor(this.cells.length / this.cols);
   constructor(
-    public readonly cells: MapCellKind[] = [],
+    public readonly cells: CellDesc[] = [],
     public readonly cols = 8
   ) {}
 
-  colRowValue(col: number, row: number): MapCellKind {
+  colRowValue(col: number, row: number): CellDesc {
     return this.cells[row * this.cols + col];
   }
 
@@ -69,5 +91,16 @@ export class DrawableText {
     public text: string,
     public color: FontColor = FontColor.BLACK,
     public scale: SpriteScale = SpriteScale.ONE
+  ) {}
+}
+
+export class Delayed {
+  public elapsed: number = 0;
+  constructor(public until: number, public action: (ecs: ECSMan) => void) {}
+}
+
+export class FrameAction {
+  constructor(
+    public action: (ecs: ECSMan, entity: Entity<FrameAction>) => void
   ) {}
 }

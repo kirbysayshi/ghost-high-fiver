@@ -40,8 +40,9 @@ export class FontSheet {
     );
   }
 
-  heightOf (scale: SpriteScale = SpriteScale.ONE) {
-    return this.sscreen.heightOf(this.white.img.height, scale);
+  heightOf (scale: SpriteScale = SpriteScale.ONE): SpritePixelUnit {
+    return this.white.img.height * scale;
+    // return this.sscreen.heightOf(this.white.img.height, scale);
   }
 
   drawText(
@@ -51,8 +52,8 @@ export class FontSheet {
     scale = SpriteScale.ONE,
     color = FontColor.BLACK
   ) {
-    let screenX = this.sscreen.pts(x);
-    let screenY = this.sscreen.pts(y);
+    let screenX = x; //this.sscreen.pts(x);
+    let screenY = y; //this.sscreen.pts(y);
 
     // scale *= 320 / 128;
 
@@ -83,22 +84,8 @@ export class FontSheet {
           screenY,
           scale
         );
-
-        // this.spriteScreen.screen.ctx.drawImage(
-        //   img,
-        //   sheetX,
-        //   0,
-        //   chrToWidth[c],
-        //   img.height,
-        //   (screenX),
-        //   (screenY),
-        //   (this.spriteScreen.projectToScreen(chrToWidth[c] * scale)),
-        //   (this.spriteScreen.projectToScreen(img.height * scale)),
-        // );
       }
 
-      // screenX += this.spriteScreen.projectToScreen(chrToWidth[c] * scale);
-      // screenX += this.spriteScreen.projectToScreen(chrToWidth[c]);
       screenX += chrToWidth[c] * scale;
     }
   }

@@ -18,6 +18,8 @@ declare module 'js13k-ecs' {
   export type Component<T> = T;
   export type System = { update: (dt: number) => void };
   export type Entity<T> = {
+    // id: EntityId;
+    components: { [key: string]: Component<T> };
     // TODO: this is actually instance of Component, not Component constructor
     add (...components: T[]): void;
     remove (...components: ComponentConstructor[]): void;
