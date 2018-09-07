@@ -19,7 +19,7 @@ export class SpriteScreen {
     this.ratio = width / dprScreen.width;
     this.height = this.ratio * dprScreen.height;
 
-    this.backbuffer = DPRScreen.Duplicate(dprScreen);
+    this.backbuffer = DPRScreen.Duplicate(dprScreen).detach();
   }
 
   heightOf(h: number, scale: SpriteScale = SpriteScale.ONE) {
@@ -45,7 +45,7 @@ export class SpriteScreen {
       this.pts(dx),
       this.pts(dy),
       this.pts(sw) * Math.floor(scale),
-      this.pts(sh) * Math.floor(scale)
+      this.pts(sh) * Math.floor(scale),
     );
   }
 

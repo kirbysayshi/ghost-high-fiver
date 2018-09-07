@@ -14,7 +14,8 @@ import {
   DrawableSystem,
   DrawableTextSystem,
   DelayedSystem,
-  FrameActionSystem
+  FrameActionSystem,
+  DrawActionSystem
 } from "./systems";
 import {
   Geo,
@@ -25,7 +26,8 @@ import {
   DynamicPos,
   DrawableText,
   Delayed,
-  FrameAction
+  FrameAction,
+  DrawAction
 } from "./components";
 import { SceneManager } from "./sceneman";
 import { v2 } from "pocket-physics/src/v2";
@@ -48,18 +50,15 @@ enum Routes {
 
   // Splashhelp: Could be same as settings, but displays credits
 
-  const cvs = document.querySelector("#c") as HTMLCanvasElement;
   const dprScreen = new DPRScreen(
-    window.innerWidth,
-    window.innerHeight,
-    1,
-    cvs
+    document.body,
+    128,
   );
 
   const bgSheet = new SpriteSheet(SpritesPath.default);
   await bgSheet.load();
 
-  const sscreen = new SpriteScreen(dprScreen, 256);
+  const sscreen = new SpriteScreen(dprScreen, 128);
   const fontSheet = new FontSheet(sscreen);
   await fontSheet.load();
 
@@ -72,18 +71,20 @@ enum Routes {
     DrawableText,
     Delayed,
     FrameAction,
+    DrawAction,
   );
   ecsman.process(
     new DelayedSystem(ecsman),
     new FrameActionSystem(ecsman),
     new GeoSystem(ecsman),
-    new LocateSystem(ecsman),
+    new LocateSystem(ecsman)
   );
 
   // We have to manage our own list of systems that only deal with drawing.
   const drawSystems = [
     new DrawableSystem(ecsman, sscreen),
-    new DrawableTextSystem(ecsman, fontSheet)
+    new DrawableTextSystem(ecsman, fontSheet),
+    new DrawActionSystem(ecsman, sscreen),
   ];
 
   const scenes = new SceneManager(ecsman);
@@ -93,6 +94,58 @@ enum Routes {
     LOCATE = "LOCATE",
     SETTINGS = "SETTINGS"
   }
+
+  scenes.register({
+    id: "demo",
+    onEnter: async ecs => {
+
+      ecs
+        .create()
+        .add(new DrawAction((ecs, sscreen, e) => {
+
+          sscreen.dprScreen.ctx!.fillStyle = 'black';
+          for (let i = 0; i < 256; i++) {
+            if (i % 2 === 0) {
+              sscreen.dprScreen.ctx!.fillRect(i, 50, 1, 1);
+            }
+          }
+        }));
+
+      ecs
+        .create()
+        .add(
+          new DynamicPos(v2(0, 0)),
+          new DrawableText(
+            "This is a FONT TEST... With lots more following.",
+            FontColor.BLACK,
+            SpriteScale.ONE
+          )
+        );
+      
+        ecs
+        .create()
+        .add(
+          new DynamicPos(v2(0, 8)),
+          new DrawableText(
+            "And the TEST! " + window.devicePixelRatio,
+            FontColor.BLACK,
+            SpriteScale.TWO
+          )
+        );
+
+        ecsman
+        .create()
+        .add(
+          new DynamicPos({ x: 0, y: 51 }),
+          new DrawableImage(
+            bgSheet.img,
+            { x: 0, y: 0 },
+            { x: 128, y: 64 },
+            SpriteScale.ONE
+          )
+        );
+    }
+  });
 
   scenes.register({
     id: Scenes.BOOT,
@@ -107,7 +160,11 @@ enum Routes {
           const line = ecs.create();
           line.add(
             new DynamicPos(v2(0, 0 * lineHeight)),
-            new DrawableText("Checking ETHER RAM... 0", FontColor.BLACK, SpriteScale.ONE),
+            new DrawableText(
+              "Checking ETHER RAM... 0",
+              FontColor.BLACK,
+              SpriteScale.ONE
+            ),
             new FrameAction((ecs, entity) => {
               ram += 96;
               const txt = entity.get<DrawableText>(DrawableText);
@@ -115,10 +172,10 @@ enum Routes {
 
               let msg;
               if (ram >= MAX_RAM) {
-                msg = ' ' + ram + 'PB OK!';
+                msg = " " + ram + "PB OK!";
                 entity.remove(FrameAction); // aka "self"!
               } else {
-                msg = ' ' + ram;
+                msg = " " + ram;
               }
 
               const subbed = txt.text.replace(/\s\d+/, msg);
@@ -187,92 +244,91 @@ enum Routes {
     onExit: async (ecs: ECSMan) => {}
   });
 
-  scenes.toScene(Scenes.BOOT);
+  // scenes.toScene(Scenes.BOOT);
+  scenes.toScene('demo');
 
   // TODO: these "global" components should probably avoid the ECSMan so they
   // persist forever. A SUPER HACK, but better than having to re-init/reload
   // them every time?
-  ecsman
-    .create()
-    .add(
-      new GridMap(
-        [
-          {
-            kind: MapCellKind.TAROT,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.PIER,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.ABANDONED_WAREHOUSE,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.TAROT,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.TAROT,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.TAROT,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.TAROT,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
-          },
-          {
-            kind: MapCellKind.TAROT,
-            ghost: 0,
-            problem: {
-              prompt: "",
-              options: [{ text: "only option" }],
-              correct: 0
-            }
+  ecsman.create().add(
+    new GridMap(
+      [
+        {
+          kind: MapCellKind.TAROT,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
           }
-        ],
-        8
-      )
-    );
+        },
+        {
+          kind: MapCellKind.PIER,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        },
+        {
+          kind: MapCellKind.ABANDONED_WAREHOUSE,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        },
+        {
+          kind: MapCellKind.TAROT,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        },
+        {
+          kind: MapCellKind.TAROT,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        },
+        {
+          kind: MapCellKind.TAROT,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        },
+        {
+          kind: MapCellKind.TAROT,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        },
+        {
+          kind: MapCellKind.TAROT,
+          ghost: 0,
+          problem: {
+            prompt: "",
+            options: [{ text: "only option" }],
+            correct: 0
+          }
+        }
+      ],
+      8
+    )
+  );
 
   const geo = ecsman.create();
   geo.add(new Geo());

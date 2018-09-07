@@ -107,3 +107,15 @@ Created a FrameAction component/system that allows for arbitrary functions to ex
 Also make a Delayed component/system that is basically a relative scheduler. Made a "boot sequence" with it, with some hacky text manipulation for a RAM checksum :D
 
 Feeling good about this again. Scene manager + ECS manager are making things feel possible and experimental again!
+
+### 2018-09-05
+
+Tried to fix font rendering. Don't have a solution, but somewhat understand the problem: scaling up the canvas causes pixels to be irregular. Still investigating. 
+
+### 2018-09-06
+
+Solution to font rendering might be to have an even smaller base resolution. Going with 128px for now. Spent tons of time trying to get viewport ratios correct. Was doing impossible math before I relaized at least some sort of ratio needs to be hard coded.
+
+I may revisit viewport ratios and attempt http://sbcgamesdev.blogspot.com/2015/04/phaser-tutorial-manage-different-screen.html?m=1, but it's probably not worth it. What good is an amazing viewport if there's no game!?
+
+TODO: Not sure SpriteScreen serves a purpose anymore, since it seems like the wrong abstraction for layouts, and just adds confusion to the debugging of pixels.
