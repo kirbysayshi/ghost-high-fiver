@@ -1,5 +1,5 @@
 import { V2, copy, v2 } from "pocket-physics/src/v2";
-import { SpriteScale } from "./sprite-screen";
+import { SpriteScale, SpriteScreen } from "./sprite-screen";
 import { FontColor } from "./font-sheet";
 import { ECSMan } from "./ecsman";
 import { Entity } from "js13k-ecs";
@@ -102,5 +102,15 @@ export class Delayed {
 export class FrameAction {
   constructor(
     public action: (ecs: ECSMan, entity: Entity<FrameAction>) => void
+  ) {}
+}
+
+export class DrawAction {
+  constructor(
+    public action: (
+      ecs: ECSMan,
+      sscreen: SpriteScreen,
+      entity: Entity<DrawAction>
+    ) => void
   ) {}
 }

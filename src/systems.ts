@@ -7,7 +7,8 @@ import {
   DynamicPos,
   DrawableText,
   Delayed,
-  FrameAction
+  FrameAction,
+  DrawAction
 } from "./components";
 import { SpriteScreen } from "./sprite-screen";
 import { FontSheet } from "./font-sheet";
@@ -213,6 +214,20 @@ export class FrameActionSystem {
       const cmp = e.get<FrameAction>(FrameAction);
       if (cmp) {
         cmp.action(this.ecs, e);
+      }
+    })
+  }
+}
+
+export class DrawActionSystem {
+  private entities = this.ecs.select<DrawAction>(DrawAction);
+  constructor(private ecs: ECSMan, private sscreen: SpriteScreen) {}
+
+  draw (iterp: number) {
+    this.entities.iterate(e => {
+      const cmp = e.get<DrawAction>(DrawAction);
+      if (cmp) {
+        cmp.action(this.ecs, this.sscreen, e);
       }
     })
   }
