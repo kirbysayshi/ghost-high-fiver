@@ -7,9 +7,7 @@ const ecsComponentSign: ComponentSymbol = Symbol('_sign') as any;
 const ecsComponentMask: ComponentSymbol = Symbol('_mask') as any;
 
 
-export type ComponentConstructor<T = {}> = Function & {
-  new () : T;
-  new (...args: any[]): T;
+export type ComponentConstructor<T = {}> = {
   [key: string]: any;
 };
 export type ComponentInstance<T = {}, P = ComponentConstructor<T>> = T & { constructor: P, destructor?: () => void; };
