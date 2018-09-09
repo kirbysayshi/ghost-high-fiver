@@ -1,10 +1,9 @@
 import { SceneManager, Scene } from "../sceneman";
-import { PicoFont } from "../pico-font-sheet";
+import { PicoFont, FontColor } from "../pico-font-sheet";
 import { Scenes } from "../constants";
 import { ECSMan } from "../ecsman";
 import { Delayed, DynamicPos, DrawableText, FrameAction } from "../components";
 import { v2 } from "pocket-physics/src/v2";
-import { FontColor } from "../font-sheet";
 import { SpriteScale } from "../sprite-screen";
 
 export const BootScene = (scenes: SceneManager, pfont: PicoFont): Scene => ({
