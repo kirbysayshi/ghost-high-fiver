@@ -119,3 +119,15 @@ Solution to font rendering might be to have an even smaller base resolution. Goi
 I may revisit viewport ratios and attempt http://sbcgamesdev.blogspot.com/2015/04/phaser-tutorial-manage-different-screen.html?m=1, but it's probably not worth it. What good is an amazing viewport if there's no game!?
 
 TODO: Not sure SpriteScreen serves a purpose anymore, since it seems like the wrong abstraction for layouts, and just adds confusion to the debugging of pixels.
+
+TODO: Probably still worth trying a pixel font that is not 1px wide, such as Chrono Trigger DS. Hopefully it allows for at least a 256w screen, because 128 is very very tiny. And yet... pico-8 is 128x128. The main problem seems to be the font. Perhaps I should just use the Pico-8 font, which is CC-0.
+
+### 2018-09-08
+
+Tons of time trying to get the Chrono Trigger DS font packed while preserving height. Really time consuming in Pixelmator. After consulting with Lisa, who offered to do the pixel/layer pushing, we decided trying the pico-8 font was a better choice since it would be much less work.
+
+Hours spent trying to get the viewport / scaling / rendering correct today and yesterday. Seems like I can't really win. You either get blurry but consistent pixels, or sharp but stretched pixels. Or you pick a fixed width and height that is the true pixel size for the device, but live with letter/pillar boxing. Pico-8 web builds do this: Pico-8 is 128x128, but they upscale to 256x256 and put black space around the rest of the viewport.
+
+This is what I will do too, at least until I have a better sense of aesthetics.
+
+Lisa cranked out six ghosts! And using TexturePacker, I can get all the sprites into the game _very_ easily and with minimal waste in both the image and offset data.
