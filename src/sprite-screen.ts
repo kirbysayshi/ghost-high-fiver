@@ -1,4 +1,4 @@
-import { DPRScreen } from "./screen";
+import { DPRScreen, DuplicateDPRScreen } from "./screen";
 
 export type SpritePixelUnit = number;
 
@@ -19,7 +19,7 @@ export class SpriteScreen {
     // this.ratio = width / dprScreen.width;
     // this.height = this.ratio * dprScreen.height;
 
-    this.backbuffer = DPRScreen.Duplicate(dprScreen).detach();
+    this.backbuffer = DuplicateDPRScreen(dprScreen).detach();
   }
 
   // heightOf(h: number, scale: SpriteScale = SpriteScale.ONE) {

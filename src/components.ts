@@ -1,7 +1,6 @@
 import { V2, copy, v2 } from "pocket-physics/src/v2";
 import { SpriteScale, SpriteScreen } from "./sprite-screen";
-import { ECSMan } from "./ecsman";
-import { Entity } from "js13k-ecs";
+import { ECSMan, TypedEntity } from "./ecsman";
 import { FontColor } from "./pico-font-sheet";
 
 export class Geo {
@@ -102,7 +101,7 @@ export class Delayed {
 
 export class FrameAction {
   constructor(
-    public action: (ecs: ECSMan, entity: Entity<FrameAction>) => void
+    public action: (ecs: ECSMan, entity: TypedEntity<FrameAction>) => void
   ) {}
 }
 
@@ -111,7 +110,7 @@ export class DrawAction {
     public action: (
       ecs: ECSMan,
       sscreen: SpriteScreen,
-      entity: Entity<DrawAction>
+      entity: TypedEntity<DrawAction>
     ) => void
   ) {}
 }

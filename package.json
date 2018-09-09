@@ -5,14 +5,16 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "parcel index.html",
-    "build": "parcel build --public-url ./ --no-source-maps --experimental-scope-hoisting index.html",
+    "build:terser": "terser dist/src.* -c -m -o dist/src.*",
+    "build": "parcel build --public-url ./ --no-source-maps --experimental-scope-hoisting index.html --no-minify",
+    "build:remove-parcel": "node ./tools/remove-parcel-require.js dist/src.* dist/src.*",
     "clean": "rm -rf dist",
     "assets:simplify-texture-packer-json": "node tools/shrink-texture-packer-json.js ./assets/sprites.json ./assets/sprites.json",
     "assets:optimize": "for a in dist/*.png; do ./tools/tinypng.sh $a $a; done;",
     "zip:adv": "./tools/advzip.sh && advzip -z -4 -i 60 dist/game.zip",
     "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.bmp *.js && popd",
     "zip:measure": "echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain",
-    "zip": "npm run clean && NODE_ENV=production npm run build && npm run assets:optimize && npm run zip:create && npm run zip:adv && npm run zip:measure",
+    "zip": "npm run clean && NODE_ENV=production npm run build && npm run build:terser && npm run assets:optimize && npm run zip:create && npm run zip:adv && npm run zip:measure",
     "deploy": "npm run clean && npm run build && gh-pages -d dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,11 +22,11 @@
   "license": "ISC",
   "devDependencies": {
     "parcel-bundler": "^1.9.7",
+    "terser": "^3.8.2",
     "typescript": "^3.0.3"
   },
   "dependencies": {
     "idb-keyval": "^3.1.0",
-    "js13k-ecs": "^0.1.2",
     "pocket-physics": "^7.1.2",
     "pwacompat": "^2.0.7"
   },

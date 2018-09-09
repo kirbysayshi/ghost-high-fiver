@@ -7,7 +7,6 @@ import { SpriteScreen, SpriteScale } from "./sprite-screen";
 import { PicoFont, FontColor } from './pico-font-sheet';
 import { GameLoop } from "./loop";
 
-import ecs from "js13k-ecs";
 import { ECSMan } from "./ecsman";
 import {
   GeoSystem,
@@ -34,9 +33,14 @@ import { SceneManager } from "./sceneman";
 import { Scenes } from "./constants";
 import { BootScene } from "./scenes/boot";
 import { LocateScene } from "./scenes/locate";
-import { DemoScene } from "./scenes/demo";
+// import { DemoScene } from "./scenes/demo";
 
-const ecsman = new ECSMan(ecs);
+// MADNESS TAKES ITS TOLL: I have no idea how to get TS to not complain about
+// this import. If you don't put .default here, it will undefined at runtime
+// or in a structure like this: { default: { default: { the module }}}! But if
+// you put .default here, then it won't work during development! GUGHGHGHG!
+// const ecsman = new ECSMan(ECSGlobal.default);
+const ecsman = new ECSMan();
 
 (async function() {
   // Boot up: aka geolocate, load data from idb, compute grid position

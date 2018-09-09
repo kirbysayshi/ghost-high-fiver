@@ -1,41 +1,21 @@
-import ecs, { ECS, ComponentConstructor, System, EntityId, Entity } from "js13k-ecs";
+import { EntityComponentSystem, Entity, EntityId } from "./ecs";
+export { TypedEntity } from './ecs';
 
-export class ECSMan {
-  private entities: Entity<{}>[] = [];
-  constructor(private ecs: ECS) {}
-
-  register(...components: ComponentConstructor[]) {
-    return this.ecs.register(...components);
-  }
-
-  process(...systems: System[]) {
-    return this.ecs.process(...systems);
-  }
+export class ECSMan extends EntityComponentSystem {
+  private emphemerals: Entity[] = [];
 
   create<T>(id?: EntityId) {
-    const e = this.ecs.create<T>(id);
-    this.entities.push(e);
+    const e = super.create(id);
+    this.emphemerals.push(e);
     return e;
   }
 
   // AKA Leak a global entity :D
   createPersistent<T>() {
-    return this.ecs.create<T>();
+    return this.create();
   }
 
-  get(id: EntityId) {
-    return this.ecs.get(id);
-  }
-
-  select<T>(...components: ComponentConstructor[]) {
-    return this.ecs.select<T>(...components);
-  }
-
-  update(delta: number) {
-    return this.ecs.update(delta);
-  }
-
-  ejectAll () {
-    this.entities.forEach(e => e.eject());
+  ejectEphemerals () {
+    this.emphemerals.forEach(e => e.eject());
   }
 }

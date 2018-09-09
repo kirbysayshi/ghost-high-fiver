@@ -1,4 +1,3 @@
-import { Selector, Entity, ComponentConstructor } from "js13k-ecs";
 import {
   Geo,
   GridMap,
@@ -11,13 +10,13 @@ import {
   DrawAction
 } from "./components";
 import { SpriteScreen } from "./sprite-screen";
-import { ECSMan } from "./ecsman";
+import { ECSMan, Selector, Entity, ComponentConstructor, TypedEntity } from "./ecsman";
 import { PicoFont } from "./pico-font-sheet";
 
 // Some ECS helpers for known "singletons".
 
-function firstEntity<T>(selector: Selector<T>): undefined | Entity<T> {
-  let found: Entity<T> | undefined = undefined;
+function firstEntity<T>(selector: Selector<T>): undefined | TypedEntity<T> {
+  let found: TypedEntity<T> | undefined = undefined;
   selector.iterate(e => {
     if (!found) found = e;
   });

@@ -73,7 +73,7 @@ let sequence = 1;
 export class Entity {
   public components: { [key: string]: ComponentInstance } = {};
   public mask = 0;
-  constructor(private ecs: ECS, public id: string = (sequence++).toString(36)) {
+  constructor(private ecs: EntityComponentSystem, public id: string = (sequence++).toString(36)) {
     // this.id = id || (sequence++).toString(36);
   }
 
@@ -117,8 +117,10 @@ export class Entity {
     return getComponentSign(Component) in this.components;
   }
 
-  get(Component: ComponentConstructor) {
-    return this.components[getComponentSign(Component)];
+  get<T>(
+    Component: ComponentConstructor<T>
+  ): ComponentInstance<T, ComponentConstructor<T>> {
+    return this.components[getComponentSign(Component)] as T;
   }
 
   /*
@@ -163,12 +165,12 @@ class Node {
   }
 }
 
-class Selector {
+export class Selector<T = {}> {
   public map: { [key: string]: Node | undefined } = {};
   public list: Node | null = null;
   public length = 0;
 
-  constructor(public mask: number, private ecs: ECS) {
+  constructor(public mask: number, private ecs: EntityComponentSystem) {
     if (!mask) {
       throw new Error("Empty selector");
     }
@@ -185,7 +187,7 @@ class Selector {
     // Object.values(entities).forEach(entity => this.match(entity));
   }
 
-  iterate(fn: (e: Entity) => void) {
+  iterate(fn: (e: TypedEntity<T>) => void) {
     let node = this.list;
     while (node) {
       fn(node.entity);
@@ -234,12 +236,11 @@ class Selector {
   }
 }
 
-let bit = 0;
-
 const perf = performance || Date;
 const now = perf.now.bind(perf);
 
-export class ECS {
+export class EntityComponentSystem {
+  private bit = 0;
   constructor(
     public selectors: Selector[] = [],
     public systems: System[] = [],
@@ -248,7 +249,7 @@ export class ECS {
 
   register(...Components: ComponentConstructor[]) {
     Components.forEach(Component => {
-      if (bit > 31) {
+      if (this.bit > 31) {
         throw new Error("Components limit reached");
       }
 
@@ -257,9 +258,9 @@ export class ECS {
         return;
       }
 
-      Component[ecsComponentSign] = bit.toString(36);
-      Component[ecsComponentMask] = 1 << bit;
-      bit++;
+      Component[ecsComponentSign] = this.bit.toString(36);
+      Component[ecsComponentMask] = 1 << this.bit;
+      this.bit++;
     });
   }
 
@@ -282,7 +283,7 @@ export class ECS {
     return this.entities[id];
   }
 
-  select(...Components: ComponentConstructor[]) {
+  select<T>(...Components: ComponentConstructor<T>[]): Selector<T> {
     let mask = 0;
 
     Components.forEach(Component => {
@@ -292,7 +293,7 @@ export class ECS {
     const exist = this.selectors.find(selector => selector.mask === mask);
     if (exist) return exist;
 
-    const selector = new Selector(mask, this);
+    const selector = new Selector<T>(mask, this);
     this.selectors.push(selector);
     return selector;
   }

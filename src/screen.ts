@@ -22,6 +22,12 @@
 //   }
 // }
 
+// Some sort of Parcel bug, where it didn't realize internal DPRScreen
+// was same symbol as external DPRScreen.
+export function DuplicateDPRScreen(source: DPRScreen) {
+  return new DPRScreen(source.root, source.width);
+}
+
 export class DPRScreen {
   public ctx: CanvasRenderingContext2D;
   public dpr: number;
@@ -29,11 +35,14 @@ export class DPRScreen {
   public cvs: HTMLCanvasElement;
   public height: number;
 
-  static Duplicate(source: DPRScreen) {
-    return new DPRScreen(source.root, source.width);
-  }
 
-  constructor(public root: HTMLElement, public width: number, public aspectRatio = 1.4, public fillViewport = true) {
+
+  constructor(
+    public root: HTMLElement,
+    public width: number,
+    public aspectRatio = 1.4,
+    public fillViewport = true
+  ) {
     this.resize();
     window.addEventListener("resize", () => this.resize());
   }
@@ -108,8 +117,6 @@ export class DPRScreen {
         cvs.style.height = "100%";
       }
     }
-
-    
 
     const parent =
       cvs.parentNode && cvs.parentNode.nodeName !== "BODY"

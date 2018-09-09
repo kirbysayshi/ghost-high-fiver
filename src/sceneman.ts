@@ -14,7 +14,7 @@ export class SceneManager {
       await this.current.onExit(this.ecs);
     }
 
-    this.ecs.ejectAll();
+    this.ecs.ejectEphemerals();
 
     const s = this.scenes.find(s => s.id === id);
     if (!s) throw new Error("Could not find scene " + id);
