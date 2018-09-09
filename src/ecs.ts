@@ -1,16 +1,21 @@
+// Adapted from https://github.com/kutuluk/js13k-ecs.
+// Converted to TypeScript, and made non-global.
+
 export type TypedEntity<T> = Entity;
 export type System = { update: (dt: number) => void };
 export type EntityId = string;
 
 type ComponentSymbol = string;
-const ecsComponentSign: ComponentSymbol = Symbol('_sign') as any;
-const ecsComponentMask: ComponentSymbol = Symbol('_mask') as any;
-
+const ecsComponentSign: ComponentSymbol = Symbol("_sign") as any;
+const ecsComponentMask: ComponentSymbol = Symbol("_mask") as any;
 
 export type ComponentConstructor<T = {}> = {
   [key: string]: any;
 };
-export type ComponentInstance<T = {}, P = ComponentConstructor<T>> = T & { constructor: P, destructor?: () => void; };
+export type ComponentInstance<T = {}, P = ComponentConstructor<T>> = T & {
+  constructor: P;
+  destructor?: () => void;
+};
 
 // type Constructor<T = {}> = new (...args: any[]) => T;
 // export interface ComponentConstructor extends Constructor<Component> {
@@ -18,66 +23,83 @@ export type ComponentInstance<T = {}, P = ComponentConstructor<T>> = T & { const
 // }
 // export type Component = {};
 
-const selectors: Selector[] = [];
-const systems: System[] = [];
-const entities: { [key: string]: Entity } = {};
+// const selectors: Selector[] = [];
+// const systems: System[] = [];
+// const entities: { [key: string]: Entity } = {};
 
-const getComponentProperty = (ecsComponentProperty: ComponentSymbol, Component: ComponentConstructor): string | number => {
+const getComponentProperty = (
+  ecsComponentProperty: ComponentSymbol,
+  Component: ComponentConstructor
+): string | number => {
   const property = Component[ecsComponentProperty];
   if (!property) {
-    throw new Error('The component is not registered');
+    throw new Error("The component is not registered");
   }
-  return property as (string | number);
+  return property as string | number;
 };
 
-const getComponentSign = (cmp: ComponentConstructor): string => getComponentProperty(ecsComponentSign, cmp).toString();
-const getComponentMask = (cmp: ComponentConstructor): number => getComponentProperty(ecsComponentMask, cmp) as number;
+const getComponentSign = (cmp: ComponentConstructor): string =>
+  getComponentProperty(ecsComponentSign, cmp).toString();
+const getComponentMask = (cmp: ComponentConstructor): number =>
+  getComponentProperty(ecsComponentMask, cmp) as number;
 
 // const getComponentSign = getComponentProperty.bind(null, ecsComponentSign);
 // const getComponentMask = getComponentProperty.bind(null, ecsComponentMask);
 
-const matchEntity = (entity: Entity) => {
-  entity.id && selectors.forEach(selector => selector.match(entity));
-};
+// const matchEntity = (entity: Entity) => {
+//   entity.id && selectors.forEach(selector => selector.match(entity));
+// };
 
-const ejectEntity = (entity: Entity) => {
-  Object.keys(entity.components).forEach(key => {
-    const component = entity.components[key];
-    if (component.destructor) {
-      component.destructor();
-    }
-  })
-  // Object.values(entity.components).forEach(
-  //   component => component.destructor && component.destructor(),
-  // );
+// const ejectEntity = (entity: Entity) => {
+//   Object.keys(entity.components).forEach(key => {
+//     const component = entity.components[key];
+//     if (component.destructor) {
+//       component.destructor();
+//     }
+//   })
+//   // Object.values(entity.components).forEach(
+//   //   component => component.destructor && component.destructor(),
+//   // );
 
-  selectors.forEach(selector => selector.remove(entity));
-  delete entities[entity.id];
-  entity.id = '0';
-  // entity.mask = 0;
-  // entity.components = {};
-};
+//   selectors.forEach(selector => selector.remove(entity));
+//   delete entities[entity.id];
+//   entity.id = '0';
+//   // entity.mask = 0;
+//   // entity.components = {};
+// };
 
 let sequence = 1;
 
 export class Entity {
   public components: { [key: string]: ComponentInstance } = {};
   public mask = 0;
-  constructor(public id: string = (sequence++).toString(36)) {
+  constructor(private ecs: ECS, public id: string = (sequence++).toString(36)) {
     // this.id = id || (sequence++).toString(36);
   }
 
+  private updateSelectors() {
+    if (this.id) {
+      this.ecs.selectors.forEach(selector => selector.match(this));
+    }
+  }
+
   add(...components: ComponentInstance[]) {
-    components.forEach((component) => {
-      this.components[getComponentSign(<ComponentConstructor<typeof component>> component.constructor)] = component;
-      this.mask |= getComponentMask(<ComponentConstructor<typeof component>> component.constructor);
+    components.forEach(component => {
+      this.components[
+        getComponentSign(<ComponentConstructor<typeof component>>(
+          component.constructor
+        ))
+      ] = component;
+      this.mask |= getComponentMask(<ComponentConstructor<typeof component>>(
+        component.constructor
+      ));
     });
 
-    matchEntity(this);
+    this.updateSelectors();
   }
 
   remove(...Components: ComponentConstructor[]) {
-    Components.forEach((Component) => {
+    Components.forEach(Component => {
       const sign = getComponentSign(Component);
       const component = this.components[sign];
 
@@ -88,7 +110,7 @@ export class Entity {
       }
     });
 
-    matchEntity(this);
+    this.updateSelectors();
   }
 
   has(Component: ComponentConstructor) {
@@ -115,7 +137,21 @@ export class Entity {
   */
 
   eject() {
-    ejectEntity(this);
+    Object.keys(this.components).forEach(key => {
+      const component = this.components[key];
+      if (component.destructor) {
+        component.destructor();
+      }
+    });
+    // Object.values(entity.components).forEach(
+    //   component => component.destructor && component.destructor(),
+    // );
+
+    this.ecs.selectors.forEach(selector => selector.remove(this));
+    delete this.ecs.entities[this.id];
+    this.id = "0";
+    // entity.mask = 0;
+    // entity.components = {};
   }
 }
 
@@ -132,9 +168,9 @@ class Selector {
   public list: Node | null = null;
   public length = 0;
 
-  constructor(public mask: number) {
+  constructor(public mask: number, private ecs: ECS) {
     if (!mask) {
-      throw new Error('Empty selector');
+      throw new Error("Empty selector");
     }
 
     // this.mask = mask;
@@ -142,10 +178,10 @@ class Selector {
     // this.list = null;
     // this.length = 0;
 
-    Object.keys(entities).forEach(key => {
-      const entity = entities[key];
+    Object.keys(this.ecs.entities).forEach(key => {
+      const entity = this.ecs.entities[key];
       this.match(entity);
-    })
+    });
     // Object.values(entities).forEach(entity => this.match(entity));
   }
 
@@ -203,11 +239,17 @@ let bit = 0;
 const perf = performance || Date;
 const now = perf.now.bind(perf);
 
-export const ECSGlobal = {
+export class ECS {
+  constructor(
+    public selectors: Selector[] = [],
+    public systems: System[] = [],
+    public entities: { [key: string]: Entity } = {}
+  ) {}
+
   register(...Components: ComponentConstructor[]) {
-    Components.forEach((Component) => {
+    Components.forEach(Component => {
       if (bit > 31) {
-        throw new Error('Components limit reached');
+        throw new Error("Components limit reached");
       }
 
       if (Component[ecsComponentSign]) {
@@ -219,51 +261,51 @@ export const ECSGlobal = {
       Component[ecsComponentMask] = 1 << bit;
       bit++;
     });
-  },
+  }
 
   process(...s: System[]) {
-    s.forEach(system => systems.push(system));
-  },
+    s.forEach(system => this.systems.push(system));
+  }
 
   create(id?: string) {
-    const entity = new Entity(id);
+    const entity = new Entity(this, id);
 
-    if (entities[entity.id]) {
-      throw new Error('The ID already exist');
+    if (this.entities[entity.id]) {
+      throw new Error("The ID already exist");
     }
 
-    entities[entity.id] = entity;
+    this.entities[entity.id] = entity;
     return entity;
-  },
+  }
 
   get(id: string) {
-    return entities[id];
-  },
+    return this.entities[id];
+  }
 
   select(...Components: ComponentConstructor[]) {
     let mask = 0;
 
-    Components.forEach((Component) => {
+    Components.forEach(Component => {
       mask |= getComponentMask(Component);
     });
 
-    const exist = selectors.find(selector => selector.mask === mask);
+    const exist = this.selectors.find(selector => selector.mask === mask);
     if (exist) return exist;
 
-    const selector = new Selector(mask);
-    selectors.push(selector);
+    const selector = new Selector(mask, this);
+    this.selectors.push(selector);
     return selector;
-  },
+  }
 
   update(delta: number) {
     const statistics: { [key: string]: number } = {};
 
-    systems.forEach((system) => {
+    this.systems.forEach(system => {
       const begin = now();
       system.update(delta);
       statistics[system.constructor.name] = now() - begin;
     });
 
     return statistics;
-  },
-};
+  }
+}
