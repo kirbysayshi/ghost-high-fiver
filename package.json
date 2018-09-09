@@ -7,6 +7,7 @@
     "dev": "parcel index.html",
     "build": "parcel build --public-url ./ --no-source-maps --experimental-scope-hoisting index.html",
     "clean": "rm -rf dist",
+    "assets:simplify-texture-packer-json": "node tools/shrink-texture-packer-json.js ./assets/sprites.json ./assets/sprites.json",
     "assets:optimize": "for a in dist/*.png; do ./tools/tinypng.sh $a $a; done;",
     "zip:adv": "./tools/advzip.sh && advzip -z -4 -i 60 dist/game.zip",
     "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.bmp *.js && popd",

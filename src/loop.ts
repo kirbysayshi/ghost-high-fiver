@@ -65,7 +65,7 @@ interface GameLoopOptions {
     update: (dt: number) => void,
     panicAt?: number,
     onPanic?:  () => void,
-    onFPS?: () => void
+    onFPS?: (fps: number) => void
 }
 
 export const GameLoop = ({

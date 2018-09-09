@@ -11,8 +11,8 @@ import {
   DrawAction
 } from "./components";
 import { SpriteScreen } from "./sprite-screen";
-import { FontSheet } from "./font-sheet";
 import { ECSMan } from "./ecsman";
+import { PicoFont } from "./pico-font-sheet";
 
 // Some ECS helpers for known "singletons".
 
@@ -151,10 +151,10 @@ export class DrawableSystem {
       const interpY = pos.ppos.y + (pos.cpos.y - pos.ppos.y) * interp;
       this.sscreen.drawImg(
         img.drawable,
-        img.source.x,
-        img.source.y,
-        img.dims.x,
-        img.dims.y,
+        img.desc.x,
+        img.desc.y,
+        img.desc.w,
+        img.desc.h,
         interpX,
         interpY,
         img.scale
@@ -168,7 +168,7 @@ export class DrawableTextSystem {
     DrawableText,
     DynamicPos
   );
-  constructor(private ecs: ECSMan, private fontSheet: FontSheet) {}
+  constructor(private ecs: ECSMan, private fontSheet: PicoFont) {}
 
   draw(interp: number) {
     this.dynamics.iterate(e => {

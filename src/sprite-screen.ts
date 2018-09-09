@@ -15,16 +15,16 @@ export class SpriteScreen {
   height: SpritePixelUnit;
   backbuffer: DPRScreen;
 
-  constructor(public dprScreen: DPRScreen, public width: SpritePixelUnit) {
-    this.ratio = width / dprScreen.width;
-    this.height = this.ratio * dprScreen.height;
+  constructor(public dprScreen: DPRScreen) {
+    // this.ratio = width / dprScreen.width;
+    // this.height = this.ratio * dprScreen.height;
 
     this.backbuffer = DPRScreen.Duplicate(dprScreen).detach();
   }
 
-  heightOf(h: number, scale: SpriteScale = SpriteScale.ONE) {
-    return this.pts(h) * Math.floor(scale);
-  }
+  // heightOf(h: number, scale: SpriteScale = SpriteScale.ONE) {
+  //   return this.pts(h) * Math.floor(scale);
+  // }
 
   drawImg(
     img: HTMLCanvasElement | HTMLImageElement,
@@ -42,17 +42,17 @@ export class SpriteScreen {
       sy,
       sw,
       sh,
-      this.pts(dx),
-      this.pts(dy),
-      this.pts(sw) * Math.floor(scale),
-      this.pts(sh) * Math.floor(scale),
+      dx,// this.pts(dx),
+      dy,// this.pts(dy),
+      sw * Math.floor(scale),// this.pts(sw) * Math.floor(scale),
+      sh * Math.floor(scale),// this.pts(sh) * Math.floor(scale),
     );
   }
 
   // projectToScreen
-  pts(p: SpritePixelUnit) {
-    return p / this.ratio;
-  }
+  // pts(p: SpritePixelUnit) {
+  //   return p / this.ratio;
+  // }
 
   ghostGlitch(
     x: SpritePixelUnit,
@@ -66,12 +66,12 @@ export class SpriteScreen {
     // From 100ms per frame to 1ms...
     this.backbuffer.drawFrom(this.dprScreen);
 
-    let sx = this.pts(x);
-    let sy = this.pts(y);
-    let sw = this.pts(width);
-    let sh = this.pts(height);
+    let sx = x;//this.pts(x);
+    let sy = y;//this.pts(y);
+    let sw = width;//this.pts(width);
+    let sh = height;//this.pts(height);
 
-    const lines = Math.floor(sh / this.pts(1) / 2);
+    const lines = Math.floor(sh / 2); //Math.floor(sh / this.pts(1) / 2);
     const incr = sh / lines;
 
     for (let i = 0; i < lines; i++) {

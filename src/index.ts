@@ -1,9 +1,10 @@
 import { set, get } from "idb-keyval";
 import { DPRScreen } from "./screen";
 import * as SpritesPath from "../assets/sprites.png";
+import * as SpritesInfo from "../assets/sprites.json";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
-import { FontSheet, FontColor } from "./font-sheet";
+import { PicoFont, FontColor } from './pico-font-sheet';
 import { GameLoop } from "./loop";
 
 import ecs from "js13k-ecs";
@@ -30,16 +31,12 @@ import {
   DrawAction
 } from "./components";
 import { SceneManager } from "./sceneman";
-import { v2 } from "pocket-physics/src/v2";
+import { Scenes } from "./constants";
+import { BootScene } from "./scenes/boot";
+import { LocateScene } from "./scenes/locate";
+import { DemoScene } from "./scenes/demo";
 
 const ecsman = new ECSMan(ecs);
-
-enum Routes {
-  BOOT = "BOOT",
-  ENCOUNTER = "ENCOUNTER",
-  SETTINGS = "SETTINGS",
-  SPLASHHELP = "SPLASHHELP"
-}
 
 (async function() {
   // Boot up: aka geolocate, load data from idb, compute grid position
@@ -52,15 +49,16 @@ enum Routes {
 
   const dprScreen = new DPRScreen(
     document.body,
-    128,
+    128
   );
 
   const bgSheet = new SpriteSheet(SpritesPath.default);
   await bgSheet.load();
 
-  const sscreen = new SpriteScreen(dprScreen, 128);
-  const fontSheet = new FontSheet(sscreen);
-  await fontSheet.load();
+  const sscreen = new SpriteScreen(dprScreen);
+
+  const pfont = new PicoFont(sscreen);
+  await pfont.load();
 
   ecsman.register(
     Geo,
@@ -83,174 +81,25 @@ enum Routes {
   // We have to manage our own list of systems that only deal with drawing.
   const drawSystems = [
     new DrawableSystem(ecsman, sscreen),
-    new DrawableTextSystem(ecsman, fontSheet),
+    new DrawableTextSystem(ecsman, pfont),
     new DrawActionSystem(ecsman, sscreen),
   ];
 
   const scenes = new SceneManager(ecsman);
 
-  enum Scenes {
-    BOOT = "BOOT",
-    LOCATE = "LOCATE",
-    SETTINGS = "SETTINGS"
-  }
+  // TODO: Ensure this is not imported in final build!
+  // scenes.register(DemoScene(pfont, bgSheet));
 
-  scenes.register({
-    id: "demo",
-    onEnter: async ecs => {
+  scenes.register(BootScene(scenes, pfont));
+  scenes.register(LocateScene(bgSheet));
 
-      ecs
-        .create()
-        .add(new DrawAction((ecs, sscreen, e) => {
-
-          sscreen.dprScreen.ctx!.fillStyle = 'black';
-          for (let i = 0; i < 256; i++) {
-            if (i % 2 === 0) {
-              sscreen.dprScreen.ctx!.fillRect(i, 50, 1, 1);
-            }
-          }
-        }));
-
-      ecs
-        .create()
-        .add(
-          new DynamicPos(v2(0, 0)),
-          new DrawableText(
-            "This is a FONT TEST... With lots more following.",
-            FontColor.BLACK,
-            SpriteScale.ONE
-          )
-        );
-      
-        ecs
-        .create()
-        .add(
-          new DynamicPos(v2(0, 8)),
-          new DrawableText(
-            "And the TEST! " + window.devicePixelRatio,
-            FontColor.BLACK,
-            SpriteScale.TWO
-          )
-        );
-
-        ecsman
-        .create()
-        .add(
-          new DynamicPos({ x: 0, y: 51 }),
-          new DrawableImage(
-            bgSheet.img,
-            { x: 0, y: 0 },
-            { x: 128, y: 64 },
-            SpriteScale.ONE
-          )
-        );
-    }
-  });
-
-  scenes.register({
-    id: Scenes.BOOT,
-    onEnter: async (ecs: ECSMan) => {
-      const fontHeight = fontSheet.heightOf(SpriteScale.ONE);
-      const lineHeight = fontHeight + Math.floor(fontHeight / 2);
-
-      ecs.create().add(
-        new Delayed(0, ecs => {
-          const MAX_RAM = 1792;
-          let ram = 0;
-          const line = ecs.create();
-          line.add(
-            new DynamicPos(v2(0, 0 * lineHeight)),
-            new DrawableText(
-              "Checking ETHER RAM... 0",
-              FontColor.BLACK,
-              SpriteScale.ONE
-            ),
-            new FrameAction((ecs, entity) => {
-              ram += 96;
-              const txt = entity.get<DrawableText>(DrawableText);
-              if (!txt) return;
-
-              let msg;
-              if (ram >= MAX_RAM) {
-                msg = " " + ram + "PB OK!";
-                entity.remove(FrameAction); // aka "self"!
-              } else {
-                msg = " " + ram;
-              }
-
-              const subbed = txt.text.replace(/\s\d+/, msg);
-              txt.text = subbed;
-            })
-          );
-        })
-      );
-
-      ecs.create().add(
-        new Delayed(3000, ecs => {
-          ecs
-            .create()
-            .add(
-              new DynamicPos(v2(0, 1 * lineHeight)),
-              new DrawableText("Settling ectoplasmic tether... OK")
-            );
-        })
-      );
-
-      ecs.create().add(
-        new Delayed(4000, ecs => {
-          ecs
-            .create()
-            .add(
-              new DynamicPos(v2(0, 2 * lineHeight)),
-              new DrawableText("Booting Spectral Scope... OK")
-            );
-        })
-      );
-
-      ecs.create().add(
-        new Delayed(5000, ecs => {
-          scenes.toScene(Scenes.LOCATE);
-        })
-      );
-    },
-    onExit: async (ecs: ECSMan) => {}
-  });
-
-  scenes.register({
-    id: Scenes.LOCATE,
-    onEnter: async (ecs: ECSMan) => {
-      ecsman
-        .create()
-        .add(
-          new DynamicPos({ x: 0, y: 0 }),
-          new DrawableImage(
-            bgSheet.img,
-            { x: 0, y: 0 },
-            { x: 128, y: 64 },
-            SpriteScale.TWO
-          )
-        );
-      ecsman
-        .create()
-        .add(
-          new DynamicPos({ x: 4, y: sscreen.pts(64) }),
-          new DrawableText(
-            "Location: THE FIRST ONE",
-            FontColor.BLACK,
-            SpriteScale.TWO
-          )
-        );
-    },
-    onExit: async (ecs: ECSMan) => {}
-  });
-
-  // scenes.toScene(Scenes.BOOT);
-  scenes.toScene('demo');
+  scenes.toScene(Scenes.BOOT);
+  // scenes.toScene('demo');
 
   // TODO: these "global" components should probably avoid the ECSMan so they
   // persist forever. A SUPER HACK, but better than having to re-init/reload
   // them every time?
-  ecsman.create().add(
+  ecsman.createPersistent().add(
     new GridMap(
       [
         {
@@ -332,20 +181,6 @@ enum Routes {
 
   const geo = ecsman.create();
   geo.add(new Geo());
-
-  // The location sheet?
-  // TODO: a Tag(name) component to be able to reference by constant?
-
-  // ecsman
-  //   .create()
-  //   .add(
-  //     new DynamicPos({ x: 4, y: sscreen.pts(64) }),
-  //     new DrawableText(
-  //       "Location: THE FIRST ONE",
-  //       FontColor.BLACK,
-  //       SpriteScale.TWO
-  //     )
-  //   );
 
   let updateCount = 0;
 

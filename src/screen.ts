@@ -33,7 +33,7 @@ export class DPRScreen {
     return new DPRScreen(source.root, source.width);
   }
 
-  constructor(public root: HTMLElement, public width: number) {
+  constructor(public root: HTMLElement, public width: number, public aspectRatio = 1.4, public fillViewport = true) {
     this.resize();
     window.addEventListener("resize", () => this.resize());
   }
@@ -57,7 +57,7 @@ export class DPRScreen {
       this.detach();
     }
 
-    const hwRatio = 1.6;
+    const hwRatio = this.aspectRatio;
 
     const isTallEnough =
       window.innerHeight > window.innerWidth &&
@@ -99,13 +99,17 @@ export class DPRScreen {
 
     ctx.scale(dpr, dpr);
 
-    if (isTallEnough) {
-      // Assume we're in portrait
-      cvs.style.width = "100%";
-    } else {
-      // probably a more landscape or desktop window
-      cvs.style.height = "100%";
+    if (this.fillViewport) {
+      if (isTallEnough) {
+        // Assume we're in portrait
+        cvs.style.width = "100%";
+      } else {
+        // probably a more landscape or desktop window
+        cvs.style.height = "100%";
+      }
     }
+
+    
 
     const parent =
       cvs.parentNode && cvs.parentNode.nodeName !== "BODY"
