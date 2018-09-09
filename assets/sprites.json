@@ -1,36 +1,42 @@
 {
-  "ghost_bun": {
+  "ghost_bat": {
     "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+  },
+  "ghost_bun": {
+    "x": 32,
     "y": 0,
     "w": 32,
     "h": 32
   },
   "ghost_cat": {
-    "x": 32,
-    "y": 0,
-    "w": 32,
-    "h": 32
-  },
-  "ghost_hungry": {
     "x": 64,
     "y": 0,
     "w": 32,
     "h": 32
   },
-  "ghost_ink": {
+  "ghost_hungry": {
     "x": 96,
     "y": 0,
     "w": 32,
     "h": 32
   },
-  "ghost_petrified": {
+  "ghost_ink": {
     "x": 0,
     "y": 32,
     "w": 32,
     "h": 32
   },
-  "ghost_plant": {
+  "ghost_petrified": {
     "x": 32,
+    "y": 32,
+    "w": 32,
+    "h": 32
+  },
+  "ghost_plant": {
+    "x": 64,
     "y": 32,
     "w": 32,
     "h": 32

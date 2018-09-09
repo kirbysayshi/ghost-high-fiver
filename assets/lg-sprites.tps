@@ -181,6 +181,7 @@
         </struct>
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
+            <key type="filename">raw/ghost_bat.png</key>
             <key type="filename">raw/ghost_bun.png</key>
             <key type="filename">raw/ghost_cat.png</key>
             <key type="filename">raw/ghost_hungry.png</key>
@@ -240,6 +241,7 @@
             <filename>raw/loc_abandoned.png</filename>
             <filename>raw/loc_pier.png</filename>
             <filename>raw/loc_tarot.png</filename>
+            <filename>raw/ghost_bat.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>
