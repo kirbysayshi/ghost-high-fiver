@@ -10,7 +10,7 @@ import {
   DrawAction
 } from "./components";
 import { SpriteScreen } from "./sprite-screen";
-import { ECSMan, Selector, Entity, ComponentConstructor, TypedEntity } from "./ecsman";
+import { ECSMan, Selector, ComponentConstructor, TypedEntity } from "./ecsman";
 import { PicoFont } from "./pico-font-sheet";
 
 // Some ECS helpers for known "singletons".

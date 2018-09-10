@@ -1,5 +1,5 @@
 import { EntityComponentSystem, Entity, EntityId } from "./ecs";
-export { TypedEntity } from './ecs';
+export { TypedEntity, Selector, ComponentConstructor } from './ecs';
 
 export class ECSMan extends EntityComponentSystem {
   private emphemerals: Entity[] = [];

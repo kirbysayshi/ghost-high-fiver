@@ -17,16 +17,6 @@ export type ComponentInstance<T = {}, P = ComponentConstructor<T>> = T & {
   destructor?: () => void;
 };
 
-// type Constructor<T = {}> = new (...args: any[]) => T;
-// export interface ComponentConstructor extends Constructor<Component> {
-//   [key: string]: string;
-// }
-// export type Component = {};
-
-// const selectors: Selector[] = [];
-// const systems: System[] = [];
-// const entities: { [key: string]: Entity } = {};
-
 const getComponentProperty = (
   ecsComponentProperty: ComponentSymbol,
   Component: ComponentConstructor
@@ -43,39 +33,15 @@ const getComponentSign = (cmp: ComponentConstructor): string =>
 const getComponentMask = (cmp: ComponentConstructor): number =>
   getComponentProperty(ecsComponentMask, cmp) as number;
 
-// const getComponentSign = getComponentProperty.bind(null, ecsComponentSign);
-// const getComponentMask = getComponentProperty.bind(null, ecsComponentMask);
-
-// const matchEntity = (entity: Entity) => {
-//   entity.id && selectors.forEach(selector => selector.match(entity));
-// };
-
-// const ejectEntity = (entity: Entity) => {
-//   Object.keys(entity.components).forEach(key => {
-//     const component = entity.components[key];
-//     if (component.destructor) {
-//       component.destructor();
-//     }
-//   })
-//   // Object.values(entity.components).forEach(
-//   //   component => component.destructor && component.destructor(),
-//   // );
-
-//   selectors.forEach(selector => selector.remove(entity));
-//   delete entities[entity.id];
-//   entity.id = '0';
-//   // entity.mask = 0;
-//   // entity.components = {};
-// };
-
 let sequence = 1;
 
 export class Entity {
   public components: { [key: string]: ComponentInstance } = {};
   public mask = 0;
-  constructor(private ecs: EntityComponentSystem, public id: string = (sequence++).toString(36)) {
-    // this.id = id || (sequence++).toString(36);
-  }
+  constructor(
+    private ecs: EntityComponentSystem,
+    public id: string = (sequence++).toString(36)
+  ) {}
 
   private updateSelectors() {
     if (this.id) {
@@ -123,21 +89,6 @@ export class Entity {
     return this.components[getComponentSign(Component)] as T;
   }
 
-  /*
-  set(Component, ...args) {
-    const component = this.components[getComponentSign(Component)];
-
-    if (component) {
-      if (!component.setter) {
-        throw new Error('Component does not have setter');
-      }
-      component.setter(...args);
-    } else {
-      this.add(new Component(...args));
-    }
-  }
-  */
-
   eject() {
     Object.keys(this.components).forEach(key => {
       const component = this.components[key];
@@ -145,24 +96,16 @@ export class Entity {
         component.destructor();
       }
     });
-    // Object.values(entity.components).forEach(
-    //   component => component.destructor && component.destructor(),
-    // );
 
     this.ecs.selectors.forEach(selector => selector.remove(this));
     delete this.ecs.entities[this.id];
     this.id = "0";
-    // entity.mask = 0;
-    // entity.components = {};
   }
 }
 
 class Node {
   public prev: Node | null = null;
-  constructor(public entity: Entity, public next: Node | null) {
-    // this.prev = null;
-    // this.next = next;
-  }
+  constructor(public entity: Entity, public next: Node | null) {}
 }
 
 export class Selector<T = {}> {
@@ -175,16 +118,10 @@ export class Selector<T = {}> {
       throw new Error("Empty selector");
     }
 
-    // this.mask = mask;
-    // this.map = {};
-    // this.list = null;
-    // this.length = 0;
-
     Object.keys(this.ecs.entities).forEach(key => {
       const entity = this.ecs.entities[key];
       this.match(entity);
     });
-    // Object.values(entities).forEach(entity => this.match(entity));
   }
 
   iterate(fn: (e: TypedEntity<T>) => void) {
@@ -205,7 +142,6 @@ export class Selector<T = {}> {
 
   add(entity: Entity) {
     if (this.map[entity.id]) {
-      // this.map[entity.id].entity = entity;
       return;
     }
 
