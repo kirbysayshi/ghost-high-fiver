@@ -131,3 +131,15 @@ Hours spent trying to get the viewport / scaling / rendering correct today and y
 This is what I will do too, at least until I have a better sense of aesthetics.
 
 Lisa cranked out six ghosts! And using TexturePacker, I can get all the sprites into the game _very_ easily and with minimal waste in both the image and offset data.
+
+### 2018-09-09
+
+Converted js13k-ecs to TypeScript to try to work around Parcel bugs: when minifying, it simply would not include the Class. Probably something to do with scope hoisting. Coverting it to TS actually didn't help! Same bug, just different situation. The bug only manifests when minifying via parcel. Using the `--no-minify` flag prevents the bug!
+
+Worked around that bug by minifying / compressing as a separate step using Terser.
+
+Completely out of space. Converting js13k-ecs did have a few benefits, which shows that it takes up a majority of the space. Tried writing my own, but once again got stuck on Function/Constructor types in TS, which seems to be a major weak spot (which, if you read GH Issues online, appears to be a pitfall of many, but more because JS offers no guarantees here).
+
+Solution is probably to avoid Constructor functions and instead use String/Enum tags for component types???
+
+But that is just a tangent to the real problem: out of space. Do I abandon the entire project? Try to start over and fit it into 13k? Or skip the competition and continue with the vision?
