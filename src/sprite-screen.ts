@@ -12,7 +12,7 @@ export enum SpriteScale {
 export class SpriteScreen {
   private ratio: number;
 
-  height: SpritePixelUnit;
+  // height: SpritePixelUnit;
   backbuffer: DPRScreen;
 
   constructor(public dprScreen: DPRScreen) {

@@ -4,187 +4,227 @@ import * as SpritesPath from "../assets/sprites.png";
 import * as SpritesInfo from "../assets/sprites.json";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
-import { PicoFont, FontColor } from './pico-font-sheet';
+import { PicoFont, FontColor } from "./pico-font-sheet";
 import { GameLoop } from "./loop";
 
-import { ECSMan } from "./ecsman";
-import {
-  GeoSystem,
-  LocateSystem,
-  DrawableSystem,
-  DrawableTextSystem,
-  DelayedSystem,
-  FrameActionSystem,
-  DrawActionSystem
-} from "./systems";
-import {
-  Geo,
-  GridMap,
-  PlayerLocation,
-  MapCellKind,
-  DrawableImage,
-  DynamicPos,
-  DrawableText,
-  Delayed,
-  FrameAction,
-  DrawAction
-} from "./components";
-import { SceneManager } from "./sceneman";
-import { Scenes } from "./constants";
-import { BootScene } from "./scenes/boot";
-import { LocateScene } from "./scenes/locate";
-// import { DemoScene } from "./scenes/demo";
+type SpriteDesc = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
-// MADNESS TAKES ITS TOLL: I have no idea how to get TS to not complain about
-// this import. If you don't put .default here, it will undefined at runtime
-// or in a structure like this: { default: { default: { the module }}}! But if
-// you put .default here, then it won't work during development! GUGHGHGHG!
-// const ecsman = new ECSMan(ECSGlobal.default);
-const ecsman = new ECSMan();
+type GhostAnswer = string;
+type GhostAnswerIndex = number;
+
+type GhostPrompt = {
+  problem: string[];
+  answers: GhostAnswer[];
+  correct: GhostAnswerIndex;
+  responses: {
+    right: string[];
+    wrong: string[];
+  }
+}
+
+const Ghosts = new Map<SpriteDesc, GhostPrompt>();
+Ghosts.set(SpritesInfo.ghost_bun, {
+  problem: ["I'm so fluffy and cuddly,", "no one will ever be scared of me!"],
+  answers: ["Hug it", "Love it", "Yell at it", "Back slowly away from it"],
+  correct: 3,
+  responses: {
+    right: ["I scared you!?", "AMAZING WILL YOU BE MY FRIEND?"],
+    wrong: ["Ugh please don't touch me."]
+  }
+});
+
+const MapGrid = {
+  cols: 1,
+  rows: 1,
+  cells: [
+    {
+      ghost: SpritesInfo.ghost_bun,
+      location: SpritesInfo.loc_pier
+    }
+  ]
+};
+
+type CellIndex = number;
+
+type PlayerSavedData = {
+  solvedLocations: CellIndex[];
+};
+
+type PlayerState = {
+  geo: null | Position;
+  cell: null | CellIndex;
+  saveData: PlayerSavedData;
+};
+
+type DrawableSprite = {
+  desc: SpriteDesc;
+  img: HTMLImageElement | HTMLCanvasElement;
+  scale: number;
+};
+
+type Panel = {
+  // x: number;
+  // y: number;
+  content: string[] | DrawableSprite;
+};
+
+type GameState = {
+  panels: Array<Panel>;
+  player: PlayerState;
+};
+
+const GameState: GameState = {
+  panels: [],
+  player: {
+    geo: null,
+    cell: null,
+    saveData: {
+      solvedLocations: []
+    }
+  }
+};
+
+async function getUserLocation() {
+  return new Promise<Position>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 10000
+    });
+  });
+}
+
+function mapUserLocationToGrid(grid: typeof MapGrid, state: PlayerState) {
+  const cellWidth = 20; // feet? which means the entire world is only 160 ft sq...
+  const mapWidth = grid.cols * cellWidth;
+  const mapHeight = grid.rows * cellWidth;
+
+  if (!state.geo) return;
+
+  // https://stackoverflow.com/a/2911469/169491
+  const x = (mapWidth * (180 + state.geo.coords.longitude)) / 360;
+  const y = (mapHeight * (90 - state.geo.coords.latitude)) / 180;
+
+  const col = Math.floor((x / mapWidth) * grid.cols);
+  const row = Math.floor((y / mapHeight) * grid.rows);
+
+  const idx = row * grid.cols + col;
+  state.cell = idx;
+}
+
+function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
+  let accumulatedY = 0;
+
+  const PANEL_PADDING = pfont.measure(" ", SpriteScale.TWO).h;
+  const MIN_PANEL_INNER_HEIGHT = pfont.measure(" ", SpriteScale.TWO).h * 2;
+
+  for (let i = 0; i < panels.length; i++) {
+    const panel = panels[i];
+    let contentHeight = 0;
+    if (Array.isArray(panel.content)) {
+      // text math
+      const dimensions = panel.content
+        .map(line => pfont.measure(line, SpriteScale.TWO))
+        .reduce(
+          (total, dims) => {
+            total.w = Math.max(dims.w, total.w);
+            total.h += dims.h;
+            return total;
+          },
+          { w: 0, h: 0 }
+        );
+
+      // Draw panel
+      const { ctx } = sscreen.dprScreen;
+      const panelW = dimensions.w + PANEL_PADDING * 2;
+      const panelH =
+        Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2;
+      ctx.fillStyle = "blue";
+      ctx.lineWidth = PANEL_PADDING;
+      ctx.strokeStyle = "grey";
+      ctx.fillRect(0, accumulatedY, panelW, panelH);
+      ctx.strokeRect(0, accumulatedY, panelW, panelH);
+
+      // draw the text!
+      let lineY = 0;
+      panel.content.forEach(line => {
+        pfont.drawText(
+          0 + PANEL_PADDING,
+          accumulatedY + lineY + PANEL_PADDING,
+          line,
+          SpriteScale.TWO,
+          FontColor.WHITE
+        );
+        lineY += pfont.measure(line, SpriteScale.TWO).h;
+      });
+
+      accumulatedY += panelH;
+    } else {
+      // just draw!
+      const { ctx } = sscreen.dprScreen;
+      const dimensions = { w: panel.content.desc.w, h: panel.content.desc.h };
+      const panelW = dimensions.w + PANEL_PADDING * 2;
+      const panelH =
+        Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2;
+      ctx.fillStyle = "blue";
+      ctx.lineWidth = PANEL_PADDING;
+      ctx.strokeStyle = "grey";
+      ctx.fillRect(0, accumulatedY, panelW, panelH);
+      ctx.strokeRect(0, accumulatedY, panelW, panelH);
+
+      sscreen.drawImg(
+        panel.content.img,
+        panel.content.desc.x,
+        panel.content.desc.y,
+        panel.content.desc.w,
+        panel.content.desc.h,
+        0 + PANEL_PADDING,
+        accumulatedY + PANEL_PADDING
+      );
+
+      accumulatedY += panelH;
+    }
+  }
+}
+
+async function delay(action: () => void, delay=300) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => { action(); resolve() }, delay);
+  })
+}
+
+const PLAYER_DATA_KEY = "lgsavedata";
+
+async function savePlayerData(state: GameState) {
+  await set(PLAYER_DATA_KEY, state.player.saveData);
+}
+
+async function loadPlayerData(state: GameState) {
+  const data = await get<PlayerSavedData>(PLAYER_DATA_KEY);
+
+  if (!data) return;
+
+  state.player.saveData = data;
+}
 
 (async function() {
-  // Boot up: aka geolocate, load data from idb, compute grid position
+  // Load sprites
+  // Load inventory data from idb
+  // Merge with static data
+  // Await geolocation
+  // If new ghost, display ghost effect + background + message + prompts
+  // if not new ghost, show generic empty message
+  // Save inventory to idb.
 
-  // Encounter: Display current location to user
-
-  // Settings: Toggle sound?
-
-  // Splashhelp: Could be same as settings, but displays credits
-
-  const dprScreen = new DPRScreen(
-    document.body,
-    128
-  );
-
-  const bgSheet = new SpriteSheet(SpritesPath.default);
-  await bgSheet.load();
-
+  const dprScreen = new DPRScreen(document.body, 256);
   const sscreen = new SpriteScreen(dprScreen);
-
+  const bgSheet = new SpriteSheet(SpritesPath.default);
   const pfont = new PicoFont(sscreen);
-  await pfont.load();
-
-  ecsman.register(
-    Geo,
-    GridMap,
-    PlayerLocation,
-    DrawableImage,
-    DynamicPos,
-    DrawableText,
-    Delayed,
-    FrameAction,
-    DrawAction,
-  );
-  ecsman.process(
-    new DelayedSystem(ecsman),
-    new FrameActionSystem(ecsman),
-    new GeoSystem(ecsman),
-    new LocateSystem(ecsman)
-  );
-
-  // We have to manage our own list of systems that only deal with drawing.
-  const drawSystems = [
-    new DrawableSystem(ecsman, sscreen),
-    new DrawableTextSystem(ecsman, pfont),
-    new DrawActionSystem(ecsman, sscreen),
-  ];
-
-  const scenes = new SceneManager(ecsman);
-
-  // TODO: Ensure this is not imported in final build!
-  // scenes.register(DemoScene(pfont, bgSheet));
-
-  scenes.register(BootScene(scenes, pfont));
-  scenes.register(LocateScene(bgSheet));
-
-  scenes.toScene(Scenes.BOOT);
-  // scenes.toScene('demo');
-
-  // TODO: these "global" components should probably avoid the ECSMan so they
-  // persist forever. A SUPER HACK, but better than having to re-init/reload
-  // them every time?
-  ecsman.createPersistent().add(
-    new GridMap(
-      [
-        {
-          kind: MapCellKind.TAROT,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.PIER,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.ABANDONED_WAREHOUSE,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.TAROT,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.TAROT,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.TAROT,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.TAROT,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        },
-        {
-          kind: MapCellKind.TAROT,
-          ghost: 0,
-          problem: {
-            prompt: "",
-            options: [{ text: "only option" }],
-            correct: 0
-          }
-        }
-      ],
-      8
-    )
-  );
-
-  const geo = ecsman.create();
-  geo.add(new Geo());
 
   let updateCount = 0;
 
@@ -199,28 +239,188 @@ const ecsman = new ECSMan();
         sscreen.dprScreen.height
       );
 
-      for (let i = 0; i < drawSystems.length; i++) {
-        drawSystems[i].draw(interp);
-      }
+      drawPanels(sscreen, pfont, GameState.panels);
+
+      // for (let i = 0; i < drawSystems.length; i++) {
+      //   drawSystems[i].draw(interp);
+      // }
 
       // sscreen.ghostGlitch(128, 64, 32, 32);
     },
     update: dt => {
       updateCount++;
-      const stats = ecsman.update(dt);
-      if (updateCount % 60 === 0) {
-        console.log("update", stats);
-      }
+      // const stats = ecsman.update(dt);
+      // if (updateCount % 60 === 0) {
+      //   console.log("update", stats);
+      // }
     }
   });
-
-  // setTimeout(() => gloop.stop(), 100);
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       gloop.stop();
     }
   });
+
+  await Promise.all([bgSheet.load(), pfont.load()]);
+  GameState.panels.push({
+    content: ["Loaded immaterial photograms!"]
+  });
+
+  GameState.panels.push({
+    content: ["Retrieving past lives..."]
+  });
+
+  await loadPlayerData(GameState);
+  console.log("loaded save data", GameState.player.saveData);
+
+  GameState.panels.push({
+    content: ["OK!"]
+  });
+
+  GameState.panels.push({
+    content: ["Acquiring spectral...", "triangulation!"]
+  });
+
+  let loc;
+
+  try {
+    loc = await getUserLocation();
+  } catch (e) {
+    GameState.panels.push({
+      content: ["Failed to acquire! Sorry."]
+    });
+    return;
+  }
+
+  GameState.player.geo = loc;
+
+  mapUserLocationToGrid(MapGrid, GameState.player);
+
+  if (GameState.player.cell !== null) {
+
+    GameState.panels.push({
+      content: ["Acquired!"]
+    })
+
+    
+
+    // Always show Location panel...
+    const location = MapGrid.cells[GameState.player.cell];
+
+    await delay(() => GameState.panels.push({
+      content: {
+        desc: location.location,
+        img: bgSheet.img,
+        scale: SpriteScale.ONE
+      }
+    }), 1000);
+
+    if (
+      GameState.player.saveData.solvedLocations.find(
+        idx => idx === GameState.player.cell
+      )
+    ) {
+      // location is alrady solved
+    } else {
+      // show prompt!
+
+      const ghost = Ghosts.get(location.ghost);
+      console.log(ghost);
+
+
+    }
+  } else {
+    // couldn't get location, and it didn't throw?
+  }
+
+  // // TODO: these "global" components should probably avoid the ECSMan so they
+  // // persist forever. A SUPER HACK, but better than having to re-init/reload
+  // // them every time?
+  // ecsman.createPersistent().add(
+  //   new GridMap(
+  //     [
+  //       {
+  //         kind: MapCellKind.TAROT,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.PIER,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.ABANDONED_WAREHOUSE,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.TAROT,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.TAROT,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.TAROT,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.TAROT,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       },
+  //       {
+  //         kind: MapCellKind.TAROT,
+  //         ghost: 0,
+  //         problem: {
+  //           prompt: "",
+  //           options: [{ text: "only option" }],
+  //           correct: 0
+  //         }
+  //       }
+  //     ],
+  //     8
+  //   )
+  // );
+
+  // const geo = ecsman.create();
+  // geo.add(new Geo());
+
+  // setTimeout(() => gloop.stop(), 100);
 
   // temporary, just to kill rendering on the phone.
   sscreen.dprScreen.cvs.addEventListener("touchstart", e => {

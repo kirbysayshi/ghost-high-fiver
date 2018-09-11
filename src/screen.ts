@@ -35,8 +35,6 @@ export class DPRScreen {
   public cvs: HTMLCanvasElement;
   public height: number;
 
-
-
   constructor(
     public root: HTMLElement,
     public width: number,
@@ -68,12 +66,16 @@ export class DPRScreen {
 
     const hwRatio = this.aspectRatio;
 
+    const innerWidth = window.innerWidth;
+    const innerHeight = window.innerHeight;
+    
+
     const isTallEnough =
-      window.innerHeight > window.innerWidth &&
-      window.innerHeight / window.innerWidth >= hwRatio;
+      innerHeight > innerWidth &&
+      innerHeight / innerWidth >= hwRatio;
 
     if (isTallEnough) {
-      this.height = window.innerHeight * (this.width / window.innerWidth);
+      this.height = innerHeight * (this.width / innerWidth);
     } else {
       this.height = this.width * hwRatio;
     }
