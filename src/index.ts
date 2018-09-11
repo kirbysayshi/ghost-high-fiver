@@ -12,7 +12,7 @@ type SpriteDesc = {
   y: number;
   w: number;
   h: number;
-}
+};
 
 type GhostAnswer = string;
 type GhostAnswerIndex = number;
@@ -24,8 +24,8 @@ type GhostPrompt = {
   responses: {
     right: string[];
     wrong: string[];
-  }
-}
+  };
+};
 
 const Ghosts = new Map<SpriteDesc, GhostPrompt>();
 Ghosts.set(SpritesInfo.ghost_bun, {
@@ -71,6 +71,8 @@ type Panel = {
   // x: number;
   // y: number;
   content: string[] | DrawableSprite;
+  computedX?: number;
+  computedY?: number;
 };
 
 type GameState = {
@@ -123,79 +125,100 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
   const PANEL_PADDING = pfont.measure(" ", SpriteScale.TWO).h;
   const MIN_PANEL_INNER_HEIGHT = pfont.measure(" ", SpriteScale.TWO).h * 2;
 
+  // TODO: add check where if next panel will be off the screen, put it at the top!
+  // TODO: if border: false, don't add panel padding!
+
   for (let i = 0; i < panels.length; i++) {
     const panel = panels[i];
-    let contentHeight = 0;
-    if (Array.isArray(panel.content)) {
-      // text math
-      const dimensions = panel.content
-        .map(line => pfont.measure(line, SpriteScale.TWO))
-        .reduce(
+
+    const dimensions = Array.isArray(panel.content)
+      ? panel.content.map(line => pfont.measure(line, SpriteScale.TWO)).reduce(
           (total, dims) => {
             total.w = Math.max(dims.w, total.w);
             total.h += dims.h;
             return total;
           },
           { w: 0, h: 0 }
-        );
+        )
+      : panel.content.desc;
 
-      // Draw panel
-      const { ctx } = sscreen.dprScreen;
-      const panelW = dimensions.w + PANEL_PADDING * 2;
-      const panelH =
-        Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2;
-      ctx.fillStyle = "blue";
-      ctx.lineWidth = PANEL_PADDING;
-      ctx.strokeStyle = "grey";
-      ctx.fillRect(0, accumulatedY, panelW, panelH);
-      ctx.strokeRect(0, accumulatedY, panelW, panelH);
+    // Draw panel
+    const { ctx } = sscreen.dprScreen;
+    const panelW = dimensions.w + PANEL_PADDING * 2;
+    const panelH =
+      Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2;
 
+    let panelX: number;
+    if (panel.computedX === undefined) {
+      panelX = Math.floor((sscreen.dprScreen.width - panelW) * Math.random());
+      panel.computedX = panelX;
+    } else {
+      panelX = panel.computedX;
+    }
+
+    let panelY: number;
+    if (panel.computedY === undefined) {
+      panelY = Math.max(
+        accumulatedY - Math.floor((panelH / 2) * Math.random()),
+        0
+      );
+      panel.computedY = panelY;
+    } else {
+      panelY = panel.computedY;
+    }
+
+    // Make sure previous prompts always are a little faded.
+    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.fillRect(0, 0, sscreen.dprScreen.width, sscreen.dprScreen.height);
+
+    // ctx.fillStyle = "grey";
+    ctx.fillStyle = "blue";
+    ctx.fillRect(panelX, panelY, panelW, panelH);
+    ctx.fillStyle = "blue";
+    ctx.fillRect(
+      panelX + PANEL_PADDING,
+      panelY + PANEL_PADDING,
+      panelW - 1 - PANEL_PADDING * 2,
+      panelH - PANEL_PADDING * 2
+    );
+
+    if (Array.isArray(panel.content)) {
       // draw the text!
       let lineY = 0;
       panel.content.forEach(line => {
         pfont.drawText(
-          0 + PANEL_PADDING,
-          accumulatedY + lineY + PANEL_PADDING,
+          panelX + PANEL_PADDING,
+          panelY + lineY + PANEL_PADDING,
           line,
           SpriteScale.TWO,
           FontColor.WHITE
         );
         lineY += pfont.measure(line, SpriteScale.TWO).h;
       });
-
-      accumulatedY += panelH;
     } else {
       // just draw!
-      const { ctx } = sscreen.dprScreen;
-      const dimensions = { w: panel.content.desc.w, h: panel.content.desc.h };
-      const panelW = dimensions.w + PANEL_PADDING * 2;
-      const panelH =
-        Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2;
-      ctx.fillStyle = "blue";
-      ctx.lineWidth = PANEL_PADDING;
-      ctx.strokeStyle = "grey";
-      ctx.fillRect(0, accumulatedY, panelW, panelH);
-      ctx.strokeRect(0, accumulatedY, panelW, panelH);
-
+      const { desc } = panel.content;
       sscreen.drawImg(
         panel.content.img,
-        panel.content.desc.x,
-        panel.content.desc.y,
-        panel.content.desc.w,
-        panel.content.desc.h,
-        0 + PANEL_PADDING,
-        accumulatedY + PANEL_PADDING
+        desc.x,
+        desc.y,
+        desc.w,
+        desc.h,
+        panelX + PANEL_PADDING,
+        panelY + PANEL_PADDING
       );
-
-      accumulatedY += panelH;
     }
+    accumulatedY = panelY + panelH;
   }
 }
 
-async function delay(action: () => void, delay=300) {
+async function delay(action: () => void, delay = 300) {
   return new Promise((resolve, reject) => {
-    setTimeout(() => { action(); resolve() }, delay);
-  })
+    setTimeout(() => {
+      action();
+      resolve();
+    }, delay);
+  });
 }
 
 const PLAYER_DATA_KEY = "lgsavedata";
@@ -240,12 +263,6 @@ async function loadPlayerData(state: GameState) {
       );
 
       drawPanels(sscreen, pfont, GameState.panels);
-
-      // for (let i = 0; i < drawSystems.length; i++) {
-      //   drawSystems[i].draw(interp);
-      // }
-
-      // sscreen.ghostGlitch(128, 64, 32, 32);
     },
     update: dt => {
       updateCount++;
@@ -284,6 +301,10 @@ async function loadPlayerData(state: GameState) {
 
   let loc;
 
+  // TODO: need to provide some user feedback while this is locating,
+  // especially if it is slow and going to time out...
+  // TODO: why does it time out!?!?!
+
   try {
     loc = await getUserLocation();
   } catch (e) {
@@ -298,23 +319,24 @@ async function loadPlayerData(state: GameState) {
   mapUserLocationToGrid(MapGrid, GameState.player);
 
   if (GameState.player.cell !== null) {
-
     GameState.panels.push({
       content: ["Acquired!"]
-    })
-
-    
+    });
 
     // Always show Location panel...
     const location = MapGrid.cells[GameState.player.cell];
 
-    await delay(() => GameState.panels.push({
-      content: {
-        desc: location.location,
-        img: bgSheet.img,
-        scale: SpriteScale.ONE
-      }
-    }), 1000);
+    await delay(
+      () =>
+        GameState.panels.push({
+          content: {
+            desc: location.location,
+            img: bgSheet.img,
+            scale: SpriteScale.ONE
+          }
+        }),
+      1000
+    );
 
     if (
       GameState.player.saveData.solvedLocations.find(
@@ -327,8 +349,6 @@ async function loadPlayerData(state: GameState) {
 
       const ghost = Ghosts.get(location.ghost);
       console.log(ghost);
-
-
     }
   } else {
     // couldn't get location, and it didn't throw?

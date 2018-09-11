@@ -143,3 +143,11 @@ Completely out of space. Converting js13k-ecs did have a few benefits, which sho
 Solution is probably to avoid Constructor functions and instead use String/Enum tags for component types???
 
 But that is just a tangent to the real problem: out of space. Do I abandon the entire project? Try to start over and fit it into 13k? Or skip the competition and continue with the vision?
+
+### 2018-09-10
+
+Nearly started from scratch. Kept viewport, SpriteSheet, PicoFont. Put together a Final Fantasy / JRPG-esque prompt system using global state and some structs. Timing/delay provided by async/await.
+
+This might be possible, if I forego all niceties, like most animation.
+
+744 bytes remain.
