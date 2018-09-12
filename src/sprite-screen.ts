@@ -58,7 +58,8 @@ export class SpriteScreen {
     x: SpritePixelUnit,
     y: SpritePixelUnit,
     width: SpritePixelUnit,
-    height: SpritePixelUnit
+    height: SpritePixelUnit,
+    lineCount = height / 2,
   ) {
 
     // Not sure why dpr is needed to properly copy.
@@ -71,7 +72,7 @@ export class SpriteScreen {
     let sw = width;//this.pts(width);
     let sh = height;//this.pts(height);
 
-    const lines = Math.floor(sh / 2); //Math.floor(sh / this.pts(1) / 2);
+    const lines = Math.floor(lineCount); //Math.floor(sh / this.pts(1) / 2);
     const incr = sh / lines;
 
     for (let i = 0; i < lines; i++) {

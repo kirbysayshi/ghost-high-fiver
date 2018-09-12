@@ -71,6 +71,8 @@ type Panel = {
   // x: number;
   // y: number;
   content: string[] | DrawableSprite;
+  tag?: string;
+  ghostEffect?: boolean;
   computedX?: number;
   computedY?: number;
 };
@@ -185,15 +187,20 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
     ctx.fillRect(0, 0, sscreen.dprScreen.width, sscreen.dprScreen.height);
 
+    const innerX = panelX + PANEL_PADDING,
+    const innerY = panelY + PANEL_PADDING,
+    const innerW = panelW - 1 - PANEL_PADDING * 2,
+    const innerH = panelH - PANEL_PADDING * 2
+
     // ctx.fillStyle = "grey";
     ctx.fillStyle = "blue";
     ctx.fillRect(panelX, panelY, panelW, panelH);
     ctx.fillStyle = "blue";
     ctx.fillRect(
-      panelX + PANEL_PADDING,
-      panelY + PANEL_PADDING,
-      panelW - 1 - PANEL_PADDING * 2,
-      panelH - PANEL_PADDING * 2
+      innerX,
+      innerY,
+      innerW,
+      innerH,
     );
 
     if (Array.isArray(panel.content)) {
@@ -223,8 +230,26 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
         scale
       );
     }
+
+    if (panel.ghostEffect) {
+
+      // TODO: should this be over the entire panel, or smaller to represent actually seeing the ghost?
+
+      const glitchW = innerW / 8 
+      const glitchH = innerH / 4 
+      // TODO: making x/y _slightly_ random might make it appear to waver...
+      const glitchX = innerX + (innerW / 4)
+      const glitchY = innerY + (innerH / 4)
+
+      sscreen.ghostGlitch(glitchX, glitchY, glitchW, glitchH, 5);
+    }
+
     accumulatedY = panelY + panelH;
   }
+}
+
+function randomBetween(min: number, max: number) {
+  return min + (Math.random() * (max - min));
 }
 
 async function delay(action: () => void, delay = 300) {
@@ -348,15 +373,18 @@ async function loadPlayerData(state: GameState) {
 
     await delay(() => {}, 1000);
 
-    GameState.panels.push({
+    const locPanel: Panel = {
       content: {
         desc: location.location,
         img: bgSheet.img,
         scale: SpriteScale.TWO
       },
+      tag: 'loc',
       // Always help this be at the top...
       computedY: 0
-    });
+    };
+
+    GameState.panels.push(locPanel);
 
     // TODO: tell the user they need to tap!!!!!
 
@@ -374,6 +402,17 @@ async function loadPlayerData(state: GameState) {
       // location is alrady solved
     } else {
       // show prompt!
+
+      // TODO: how to add ghost effect to panel???
+      // Maybe a panel could have a tagged name to reference?
+
+      // This will only be the first...
+      // const locPanel = GameState.panels.filter(p => p.tag === 'loc').pop();
+      // if (locPanel) {
+      //   // something went really wrong if there is no panel...
+      // }
+
+      locPanel.ghostEffect = true;
 
       const ghost = Ghosts.get(location.ghost);
       console.log(ghost);
