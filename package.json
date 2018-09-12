@@ -21,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "gh-pages": "^1.2.0",
     "parcel-bundler": "^1.9.7",
     "terser": "^3.8.2",
     "typescript": "^3.0.3"
