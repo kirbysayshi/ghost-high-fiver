@@ -255,7 +255,14 @@ async function loadPlayerData(state: GameState) {
     drawTime: 1000 / 60,
     updateTime: 1000 / 10,
     draw: interp => {
-      sscreen.dprScreen.ctx!.clearRect(
+      // sscreen.dprScreen.ctx!.clearRect(
+      //   0,
+      //   0,
+      //   sscreen.dprScreen.width,
+      //   sscreen.dprScreen.height
+      // );
+      sscreen.dprScreen.ctx!.fillStyle = 'black';
+      sscreen.dprScreen.ctx!.fillRect(
         0,
         0,
         sscreen.dprScreen.width,
