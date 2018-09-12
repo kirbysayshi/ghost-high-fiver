@@ -186,6 +186,7 @@
             <key type="filename">raw/ghost_cat.png</key>
             <key type="filename">raw/ghost_hungry.png</key>
             <key type="filename">raw/ghost_ink.png</key>
+            <key type="filename">raw/ghost_jaws.png</key>
             <key type="filename">raw/ghost_petrified.png</key>
             <key type="filename">raw/ghost_plant.png</key>
             <struct type="IndividualSpriteSettings">
@@ -200,10 +201,10 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">raw/loc_abandoned.png</key>
-            <key type="filename">raw/loc_pier.png</key>
-            <key type="filename">raw/loc_street.png</key>
-            <key type="filename">raw/loc_tarot.png</key>
+            <key type="filename">raw/low_color/loc_abandoned.png</key>
+            <key type="filename">raw/low_color/loc_pier.png</key>
+            <key type="filename">raw/low_color/loc_street.png</key>
+            <key type="filename">raw/low_color/loc_tarot.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -239,11 +240,12 @@
             <filename>raw/ghost_ink.png</filename>
             <filename>raw/ghost_petrified.png</filename>
             <filename>raw/ghost_plant.png</filename>
-            <filename>raw/loc_abandoned.png</filename>
-            <filename>raw/loc_pier.png</filename>
-            <filename>raw/loc_tarot.png</filename>
             <filename>raw/ghost_bat.png</filename>
-            <filename>raw/loc_street.png</filename>
+            <filename>raw/low_color/loc_abandoned.png</filename>
+            <filename>raw/low_color/loc_pier.png</filename>
+            <filename>raw/low_color/loc_street.png</filename>
+            <filename>raw/low_color/loc_tarot.png</filename>
+            <filename>raw/ghost_jaws.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>
