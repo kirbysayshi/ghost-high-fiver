@@ -187,10 +187,10 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
     ctx.fillRect(0, 0, sscreen.dprScreen.width, sscreen.dprScreen.height);
 
-    const innerX = panelX + PANEL_PADDING,
-    const innerY = panelY + PANEL_PADDING,
-    const innerW = panelW - 1 - PANEL_PADDING * 2,
-    const innerH = panelH - PANEL_PADDING * 2
+    const innerX = panelX + PANEL_PADDING;
+    const innerY = panelY + PANEL_PADDING;
+    const innerW = panelW - 1 - PANEL_PADDING * 2;
+    const innerH = panelH - PANEL_PADDING * 2;
 
     // ctx.fillStyle = "grey";
     ctx.fillStyle = "blue";
