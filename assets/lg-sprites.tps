@@ -202,6 +202,7 @@
             </struct>
             <key type="filename">raw/loc_abandoned.png</key>
             <key type="filename">raw/loc_pier.png</key>
+            <key type="filename">raw/loc_street.png</key>
             <key type="filename">raw/loc_tarot.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -242,6 +243,7 @@
             <filename>raw/loc_pier.png</filename>
             <filename>raw/loc_tarot.png</filename>
             <filename>raw/ghost_bat.png</filename>
+            <filename>raw/loc_street.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>
