@@ -5,7 +5,7 @@ import * as SpritesInfo from "../assets/sprites.json";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
 import { PicoFont, FontColor } from "./pico-font-sheet";
-import { GameLoop } from "./loop";
+// import { GameLoop } from "./loop";
 
 type SpriteDesc = {
   x: number;
@@ -77,11 +77,15 @@ type Panel = {
 
 type GameState = {
   panels: Array<Panel>;
+  tapActions: Array<() => void>;
+  sincePrevTap: number;
   player: PlayerState;
 };
 
 const GameState: GameState = {
   panels: [],
+  tapActions: [],
+  sincePrevTap: 0,
   player: {
     geo: null,
     cell: null,
@@ -122,7 +126,9 @@ function mapUserLocationToGrid(grid: typeof MapGrid, state: PlayerState) {
 function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
   let accumulatedY = 0;
 
-  const PANEL_PADDING = pfont.measure(" ", SpriteScale.TWO).h;
+  // const textScale = Math.floor(window.innerWidth / (pfont.measure(" ", SpriteScale.ONE).h / 320));
+
+  const PANEL_PADDING = pfont.measure(" ", SpriteScale.ONE).h;
   const MIN_PANEL_INNER_HEIGHT = pfont.measure(" ", SpriteScale.TWO).h * 2;
 
   // TODO: add check where if next panel will be off the screen, put it at the top!
@@ -140,13 +146,21 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
           },
           { w: 0, h: 0 }
         )
-      : panel.content.desc;
+      : {
+          w: panel.content.desc.w * panel.content.scale,
+          h: panel.content.desc.h * panel.content.scale
+        };
 
     // Draw panel
     const { ctx } = sscreen.dprScreen;
-    const panelW = dimensions.w + PANEL_PADDING * 2;
-    const panelH =
-      Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2;
+    const panelW = Math.min(
+      dimensions.w + PANEL_PADDING * 2,
+      sscreen.dprScreen.width
+    );
+    const panelH = Math.min(
+      Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2,
+      sscreen.dprScreen.height
+    );
 
     let panelX: number;
     if (panel.computedX === undefined) {
@@ -197,7 +211,7 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
       });
     } else {
       // just draw!
-      const { desc } = panel.content;
+      const { desc, scale } = panel.content;
       sscreen.drawImg(
         panel.content.img,
         desc.x,
@@ -205,7 +219,8 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
         desc.w,
         desc.h,
         panelX + PANEL_PADDING,
-        panelY + PANEL_PADDING
+        panelY + PANEL_PADDING,
+        scale
       );
     }
     accumulatedY = panelY + panelH;
@@ -244,24 +259,25 @@ async function loadPlayerData(state: GameState) {
   // if not new ghost, show generic empty message
   // Save inventory to idb.
 
-  const dprScreen = new DPRScreen(document.body, 256);
+  // const innerWidth = window.innerWidth;
+  // const targetWidth = innerWidth > 
+
+  const dprScreen = new DPRScreen(document.body, 320);
   const sscreen = new SpriteScreen(dprScreen);
   const bgSheet = new SpriteSheet(SpritesPath.default);
   const pfont = new PicoFont(sscreen);
 
-  let updateCount = 0;
+  const gloop = {
+    running: true,
+    stop: () => {
+      gloop.running = false;
+    },
+    anim: () => {
+      if (!gloop.running) return;
 
-  const gloop = GameLoop({
-    drawTime: 1000 / 60,
-    updateTime: 1000 / 10,
-    draw: interp => {
-      // sscreen.dprScreen.ctx!.clearRect(
-      //   0,
-      //   0,
-      //   sscreen.dprScreen.width,
-      //   sscreen.dprScreen.height
-      // );
-      sscreen.dprScreen.ctx!.fillStyle = 'black';
+      GameState.sincePrevTap = Math.max(GameState.sincePrevTap - 16, 0);
+
+      sscreen.dprScreen.ctx!.fillStyle = "black";
       sscreen.dprScreen.ctx!.fillRect(
         0,
         0,
@@ -270,19 +286,16 @@ async function loadPlayerData(state: GameState) {
       );
 
       drawPanels(sscreen, pfont, GameState.panels);
-    },
-    update: dt => {
-      updateCount++;
-      // const stats = ecsman.update(dt);
-      // if (updateCount % 60 === 0) {
-      //   console.log("update", stats);
-      // }
+      requestAnimationFrame(gloop.anim);
     }
-  });
+  };
+
+  gloop.anim();
 
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       gloop.stop();
+      console.log('stopped');
     }
   });
 
@@ -333,17 +346,25 @@ async function loadPlayerData(state: GameState) {
     // Always show Location panel...
     const location = MapGrid.cells[GameState.player.cell];
 
-    await delay(
-      () =>
-        GameState.panels.push({
-          content: {
-            desc: location.location,
-            img: bgSheet.img,
-            scale: SpriteScale.ONE
-          }
-        }),
-      1000
-    );
+    await delay(() => {}, 1000);
+
+    GameState.panels.push({
+      content: {
+        desc: location.location,
+        img: bgSheet.img,
+        scale: SpriteScale.TWO
+      },
+      // Always help this be at the top...
+      computedY: 0
+    });
+
+    // TODO: tell the user they need to tap!!!!!
+
+    GameState.tapActions.push(() => {
+      GameState.panels.push({
+        content: ['"Back at the place again..."']
+      })
+    })
 
     if (
       GameState.player.saveData.solvedLocations.find(
@@ -361,112 +382,34 @@ async function loadPlayerData(state: GameState) {
     // couldn't get location, and it didn't throw?
   }
 
-  // // TODO: these "global" components should probably avoid the ECSMan so they
-  // // persist forever. A SUPER HACK, but better than having to re-init/reload
-  // // them every time?
-  // ecsman.createPersistent().add(
-  //   new GridMap(
-  //     [
-  //       {
-  //         kind: MapCellKind.TAROT,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.PIER,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.ABANDONED_WAREHOUSE,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.TAROT,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.TAROT,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.TAROT,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.TAROT,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       },
-  //       {
-  //         kind: MapCellKind.TAROT,
-  //         ghost: 0,
-  //         problem: {
-  //           prompt: "",
-  //           options: [{ text: "only option" }],
-  //           correct: 0
-  //         }
-  //       }
-  //     ],
-  //     8
-  //   )
-  // );
+  const MIN_TAP_INTERVAL_MS = 100;
 
-  // const geo = ecsman.create();
-  // geo.add(new Geo());
+  const nextTapAction = () => {
 
-  // setTimeout(() => gloop.stop(), 100);
+    if(GameState.sincePrevTap > 0) {
+      return;
+    }
+
+    GameState.sincePrevTap = MIN_TAP_INTERVAL_MS;
+
+    const next = GameState.tapActions.shift();
+    if (next) {
+      next();
+    }
+  }
 
   // temporary, just to kill rendering on the phone.
   sscreen.dprScreen.cvs.addEventListener("touchstart", e => {
-    dprScreen.ctx!.fillStyle = "red";
-    dprScreen.ctx!.fillRect(0, 0, screen.width, screen.height);
-    gloop.stop();
+    // dprScreen.ctx!.fillStyle = "red";
+    // dprScreen.ctx!.fillRect(0, 0, screen.width, screen.height);
+    // gloop.stop();
+    nextTapAction();
   });
 
-  // let route = await get('route');
+  sscreen.dprScreen.cvs.addEventListener('click', e => {
+    nextTapAction();
+  });
 
-  // if (route === undefined) {
-  //   route = Routes.SPLASHHELP;
-  //   await set('route', route);
-  // }
-
-  // console.log('route', route);
-
-  // dispatch?
-  // Or just... document.getElementById(route).style.display = 'block' ??? lol.
 })();
 
 // Prevent zooming and extra scrolling
