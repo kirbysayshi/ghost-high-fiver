@@ -15,7 +15,7 @@
     "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.bmp *.js && popd",
     "zip:measure": "echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain",
     "zip": "npm run clean && NODE_ENV=production npm run build && npm run build:terser && npm run assets:optimize && npm run zip:create && npm run zip:adv && npm run zip:measure",
-    "deploy": "npm run clean && npm run build && gh-pages -d dist/",
+    "deploy": "npm run zip && gh-pages -d dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
