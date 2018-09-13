@@ -66,7 +66,12 @@ export class PicoFont {
     // TODO: if we use double wide glyphs, this will need to be adjusted.
     const w: SpritePixelUnit = text
       .split("")
-      .reduce((total, chr) => total + FONT_WIDTH * scale, 0);
+      .reduce(
+        (total, chr) =>
+          total +
+          (chr.charCodeAt(0) >= 128 ? FONT_WIDTH * 2 : FONT_WIDTH) * scale,
+        0
+      );
     const h: SpritePixelUnit = FONT_HEIGHT * scale;
     return { w, h };
   }
