@@ -201,10 +201,15 @@ type Panel = {
   computedY?: number;
 };
 
+type TapZone = SpriteDesc & {
+  action: (zone: TapZone) => void;
+};
+
 type GameState = {
   panels: Array<Panel>;
   tapActions: Array<() => void>;
   sincePrevTap: number;
+  tapZones: TapZone[];
   player: PlayerState;
 };
 
@@ -212,6 +217,7 @@ const GameState: GameState = {
   panels: [],
   tapActions: [],
   sincePrevTap: 0,
+  tapZones: [],
   player: {
     geo: null,
     cell: null,
@@ -249,6 +255,79 @@ function mapUserLocationToGrid(grid: typeof MapGrid, state: PlayerState) {
   state.cell = idx;
 }
 
+type PanelMeasure = {
+  padding: number;
+  w: number;
+  h: number;
+  x: number;
+  y: number;
+};
+
+function layoutPanel(
+  accumulatedY: number,
+  panel: Panel,
+  pfont: PicoFont,
+  sscreen: SpriteScreen
+): PanelMeasure {
+  const PANEL_PADDING = SpritesInfo.chrome_tl.w * SpriteScale.TWO;
+  const MIN_PANEL_INNER_HEIGHT = pfont.measure(" ", SpriteScale.TWO).h * 2;
+
+  const dimensions = Array.isArray(panel.content)
+    ? panel.content.map(line => pfont.measure(line, SpriteScale.TWO)).reduce(
+        (total, dims) => {
+          total.w = Math.max(dims.w, total.w);
+          total.h += dims.h;
+          return total;
+        },
+        { w: 0, h: 0 }
+      )
+    : {
+        w: panel.content.desc.w * panel.content.scale,
+        h: panel.content.desc.h * panel.content.scale
+      };
+
+  const panelW = Math.min(
+    dimensions.w + (panel.noBorder ? 0 : PANEL_PADDING * 2),
+    sscreen.dprScreen.width
+  );
+  const panelH = Math.min(
+    Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) +
+      (panel.noBorder ? 0 : PANEL_PADDING * 2),
+    sscreen.dprScreen.height
+  );
+
+  let panelX: number;
+  if (panel.computedX === undefined) {
+    panelX = Math.floor((sscreen.dprScreen.width - panelW) * Math.random());
+    panel.computedX = panelX;
+  } else {
+    panelX = panel.computedX;
+  }
+
+  let panelY: number;
+  if (panel.computedY === undefined) {
+    if (panel.resetY) {
+      panelY = 0;
+    } else {
+      panelY = Math.max(
+        accumulatedY - Math.floor((panelH / 2) * Math.random()),
+        0
+      );
+    }
+    panel.computedY = panelY;
+  } else {
+    panelY = panel.computedY;
+  }
+
+  return {
+    w: panelW,
+    h: panelH,
+    padding: PANEL_PADDING,
+    x: panelX,
+    y: panelY
+  };
+}
+
 function drawPanels(
   sscreen: SpriteScreen,
   bgSheet: SpriteSheet,
@@ -259,7 +338,7 @@ function drawPanels(
 
   // const textScale = Math.floor(window.innerWidth / (pfont.measure(" ", SpriteScale.ONE).h / 320));
 
-  const PANEL_PADDING = SpritesInfo.chrome_tl.w * SpriteScale.TWO;
+  // const PANEL_PADDING = SpritesInfo.chrome_tl.w * SpriteScale.TWO;
   const MIN_PANEL_INNER_HEIGHT = pfont.measure(" ", SpriteScale.TWO).h * 2;
 
   // TODO: add check where if next panel will be off the screen, put it at the top!
@@ -267,56 +346,64 @@ function drawPanels(
 
   for (let i = 0; i < panels.length; i++) {
     const panel = panels[i];
+    const layout = layoutPanel(accumulatedY, panel, pfont, sscreen);
+    const {
+      w: panelW,
+      h: panelH,
+      x: panelX,
+      y: panelY,
+      padding: PANEL_PADDING
+    } = layout;
     // const panelsRemain = i !== panels.length - 1;
 
-    const dimensions = Array.isArray(panel.content)
-      ? panel.content.map(line => pfont.measure(line, SpriteScale.TWO)).reduce(
-          (total, dims) => {
-            total.w = Math.max(dims.w, total.w);
-            total.h += dims.h;
-            return total;
-          },
-          { w: 0, h: 0 }
-        )
-      : {
-          w: panel.content.desc.w * panel.content.scale,
-          h: panel.content.desc.h * panel.content.scale
-        };
+    // const dimensions = Array.isArray(panel.content)
+    //   ? panel.content.map(line => pfont.measure(line, SpriteScale.TWO)).reduce(
+    //       (total, dims) => {
+    //         total.w = Math.max(dims.w, total.w);
+    //         total.h += dims.h;
+    //         return total;
+    //       },
+    //       { w: 0, h: 0 }
+    //     )
+    //   : {
+    //       w: panel.content.desc.w * panel.content.scale,
+    //       h: panel.content.desc.h * panel.content.scale
+    //     };
 
-    // Draw panel
+    // const panelW = Math.min(
+    //   dimensions.w + (panel.noBorder ? 0 : PANEL_PADDING * 2),
+    //   sscreen.dprScreen.width
+    // );
+    // const panelH = Math.min(
+    //   Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) +
+    //     (panel.noBorder ? 0 : PANEL_PADDING * 2),
+    //   sscreen.dprScreen.height
+    // );
+
+    // let panelX: number;
+    // if (panel.computedX === undefined) {
+    //   panelX = Math.floor((sscreen.dprScreen.width - panelW) * Math.random());
+    //   panel.computedX = panelX;
+    // } else {
+    //   panelX = panel.computedX;
+    // }
+
+    // let panelY: number;
+    // if (panel.computedY === undefined) {
+    //   if (panel.resetY) {
+    //     panelY = 0;
+    //   } else {
+    //     panelY = Math.max(
+    //       accumulatedY - Math.floor((panelH / 2) * Math.random()),
+    //       0
+    //     );
+    //   }
+    //   panel.computedY = panelY;
+    // } else {
+    //   panelY = panel.computedY;
+    // }
+
     const { ctx } = sscreen.dprScreen;
-    const panelW = Math.min(
-      dimensions.w + (panel.noBorder ? 0 : PANEL_PADDING * 2),
-      sscreen.dprScreen.width
-    );
-    const panelH = Math.min(
-      Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) +
-        (panel.noBorder ? 0 : PANEL_PADDING * 2),
-      sscreen.dprScreen.height
-    );
-
-    let panelX: number;
-    if (panel.computedX === undefined) {
-      panelX = Math.floor((sscreen.dprScreen.width - panelW) * Math.random());
-      panel.computedX = panelX;
-    } else {
-      panelX = panel.computedX;
-    }
-
-    let panelY: number;
-    if (panel.computedY === undefined) {
-      if (panel.resetY) {
-        panelY = 0;
-      } else {
-        panelY = Math.max(
-          accumulatedY - Math.floor((panelH / 2) * Math.random()),
-          0
-        );
-      }
-      panel.computedY = panelY;
-    } else {
-      panelY = panel.computedY;
-    }
 
     // Make sure previous prompts always are a little faded.
     if (!panel.noDimPrev) {
@@ -722,7 +809,7 @@ async function loadPlayerData(state: GameState) {
   if (GameState.player.cell !== null) {
     GameState.panels.push({
       content: ["Acquired!"],
-      noDimPrev: true,
+      noDimPrev: true
     });
 
     // Always show Location panel...
@@ -803,17 +890,93 @@ async function loadPlayerData(state: GameState) {
             icon: { ...NEXT_PROMPT_ICON }
           }),
         () => {
+          const prev = GameState.panels[GameState.panels.length - 1];
+          if (!prev) return; // can't happen...
 
-          ghost!.answers.forEach(answer => {
-            GameState.panels.push({
-              content: ['\x91 ' + answer],
+          const prevLayout = layoutPanel(prev.computedY!, prev, pfont, sscreen);
+          let accumulatedY = prevLayout.y + prevLayout.h + prevLayout.padding;
+
+          ghost!.answers.forEach((answer, answerIdx) => {
+            const panel: Panel = {
+              content: ["\x91 " + answer],
               noDimPrev: true,
-              computedX: pfont.measure(' ', SpriteScale.TWO).w,
+              computedX: pfont.measure(" ", SpriteScale.TWO).w,
+              computedY: accumulatedY
               // icon: { ...NEXT_PROMPT_ICON }
-            });
-          })
+            };
 
-          
+            const layout = layoutPanel(accumulatedY, panel, pfont, sscreen);
+            accumulatedY += layout.h;
+
+            GameState.panels.push(panel);
+            GameState.tapZones.push({
+              x: layout.x,
+              y: layout.y,
+              w: layout.w,
+              h: layout.h,
+              action: zone => {
+                console.log("tapped!", panel);
+
+                // Only one chance!
+                GameState.tapZones.length = 0;
+
+                if (answerIdx === ghost!.correct) {
+                  // corrrect!
+                  // show ghost as resetY panel
+                  GameState.panels.push({
+                    content: {
+                      desc: location.ghost,
+                      img: bgSheet.img,
+                      scale: SpriteScale.FOUR
+                    },
+                    resetY: true,
+                    icon: {
+                      ...NEXT_PROMPT_ICON
+                    }
+                  });
+
+                  GameState.tapActions.push(
+                    () =>
+                      GameState.panels.push({
+                        content: ghost!.responses.right,
+                        noDimPrev: true,
+                        icon: {
+                          ...NEXT_PROMPT_ICON
+                        }
+                      }),
+                    () =>
+                      GameState.panels.push({
+                        content: ["You helped " + ghost!.name + "!"],
+                        noDimPrev: true,
+                        icon: {
+                          ...NEXT_PROMPT_ICON
+                        }
+                      }),
+                    () =>
+                      GameState.panels.push({
+                        content: ["And you continued on."],
+                        noDimPrev: true,
+                        icon: {
+                          ...NEXT_PROMPT_ICON
+                        }
+                      }),
+
+                    () => window.location.reload()
+                  );
+
+                  // But then what? Tap to refresh?
+                } else {
+                  // incorrect.
+                  // mark as incorrect in game state with timestamp.
+                  // save game state.
+                  // show ghost response as resetY panel
+
+                  // Temporary.
+                  GameState.tapActions.push(() => window.location.reload());
+                }
+              }
+            });
+          });
         }
       );
     }
@@ -823,12 +986,36 @@ async function loadPlayerData(state: GameState) {
 
   const MIN_TAP_INTERVAL_MS = 500;
 
-  const nextTapAction = () => {
+  type InteractionInfo = {
+    x: number;
+    y: number;
+  };
+
+  const nextTapAction = (info: InteractionInfo) => {
     if (GameState.sincePrevTap > 0) {
       return;
     }
 
     GameState.sincePrevTap = MIN_TAP_INTERVAL_MS;
+
+    if (GameState.tapZones.length) {
+      // These take higher priority.
+
+      const idx = GameState.tapZones.findIndex(
+        zone =>
+          info.x > zone.x &&
+          info.y > zone.y &&
+          info.x < zone.x + zone.w &&
+          info.y < zone.y + zone.h
+      );
+      if (idx === -1) return;
+
+      // we have a tap!
+      const zone = GameState.tapZones.splice(idx, 1)[0];
+      zone.action(zone);
+
+      return;
+    }
 
     const next = GameState.tapActions.shift();
     if (next) {
@@ -841,11 +1028,24 @@ async function loadPlayerData(state: GameState) {
     // dprScreen.ctx!.fillStyle = "red";
     // dprScreen.ctx!.fillRect(0, 0, screen.width, screen.height);
     // gloop.stop();
-    nextTapAction();
+    const touch = e.touches[0];
+    const rect = (touch.target as HTMLCanvasElement).getBoundingClientRect();
+    const factor = rect.width / dprScreen.width;
+    const info: InteractionInfo = {
+      x: touch.clientX / factor,
+      y: touch.clientY / factor
+    };
+    nextTapAction(info);
   });
 
   sscreen.dprScreen.cvs.addEventListener("click", e => {
-    nextTapAction();
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    const factor = rect.width / dprScreen.width;
+    const info: InteractionInfo = {
+      x: e.offsetX / factor,
+      y: e.offsetY / factor
+    };
+    nextTapAction(info);
   });
 })();
 
