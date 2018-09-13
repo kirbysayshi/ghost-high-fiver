@@ -151,3 +151,30 @@ Nearly started from scratch. Kept viewport, SpriteSheet, PicoFont. Put together 
 This might be possible, if I forego all niceties, like most animation.
 
 744 bytes remain.
+
+### 2019-09-11
+
+Lisa added a new location: a street. And she cut down on colors on the backgrounds, which brought the total sprite sheet down by 4KB! One last ghost too, unless we have a ton of space to spare (doubtful).
+
+Had to deploy the game somewhere with HTTPS in order to use geolocation APIs on a phone. Spent a good chunk of time upgrading the DNS on my personal gh-pages blog to enable Github's built-in HTTPS. Thankfully it wasn't too bad, and just had to wait for some DNS propagation. But those HTTPS browser cert warnings while I was waiting were scary and made my think I did everything wrong (haven't updated DNS settings in... 5 years!?).
+
+Put the Ghost Glitch effect back in, but still need to tweak it. Also got "TapAction"s in, which should pave the way to allowing the user to tap through prompts.
+
+Tomorrow: show the ghost problem? And the obscured ghost?
+
+1038 bytes remain.
+
+### 2019-09-12
+
+It's nearly impossible to finish, and rather than stay up all night trying, I've decided it's not worth pushing myself unhealthily.
+
+However I got a lot done tonight, as the momentum ws finally picking up with "the engine". Nearly the entire "flow" is working, where a location is found, ghost asks for help, and if you tap the right choice, the ghost appears!
+
+Added message panel borders, which involved drawing the actual edges and corners as individual transformed images. Took a while to get the math right, but it looks pretty good. Surprisingly, trying to decrease the repetition of the code by making a nice struct actually _increased_ the zipped file size. I will probably never understand exactly how gzip/zip does its thing.
+
+Spent a good amount of time reworking the Pico8 font rendering to support icons (aka double width). Took awhile to figure out which unicode characters should map to them.
+
+Overall I'm content: I think there's an interesting idea here, and was able to somewhat adapt to imperfect information. While I know I could squeeze more bytes out of this thing, fundamentally this wasn't a good idea to use for JS13K. Sprites take up too much space. I never even got to the actual offline aspect. And even this shell of a game, content-wise, is over the bytes budget. Having any sort of personality through text is troublesome for these types of competitions. But I did learn some things. The viewport stuff was such a time sink, in the purest form. Next time, pick a size and stick with it. If I were making a professional game, then it's time to get the perfect viewport / experience. For anything else it's way more important to make sure what you want to do is possible! So basic but hard for me to identify in the moment. "Tomorrow I'll figure this out and then be able to move on." Nope, next time just move on that day.
+
+-420 bytes remain. :D
+
