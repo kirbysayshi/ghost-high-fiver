@@ -42,6 +42,8 @@ Ghosts.set(SpritesInfo.ghost_bun, {
   correct: 3,
   responses: {
     right: ["I scared you!?", "AMAZING WILL YOU BE MY FRIEND?"],
+
+    // TODO: "wrong" should have one response for each choice above.
     wrong: ["Ugh please don't touch me."]
   }
 });
@@ -354,55 +356,6 @@ function drawPanels(
       y: panelY,
       padding: PANEL_PADDING
     } = layout;
-    // const panelsRemain = i !== panels.length - 1;
-
-    // const dimensions = Array.isArray(panel.content)
-    //   ? panel.content.map(line => pfont.measure(line, SpriteScale.TWO)).reduce(
-    //       (total, dims) => {
-    //         total.w = Math.max(dims.w, total.w);
-    //         total.h += dims.h;
-    //         return total;
-    //       },
-    //       { w: 0, h: 0 }
-    //     )
-    //   : {
-    //       w: panel.content.desc.w * panel.content.scale,
-    //       h: panel.content.desc.h * panel.content.scale
-    //     };
-
-    // const panelW = Math.min(
-    //   dimensions.w + (panel.noBorder ? 0 : PANEL_PADDING * 2),
-    //   sscreen.dprScreen.width
-    // );
-    // const panelH = Math.min(
-    //   Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) +
-    //     (panel.noBorder ? 0 : PANEL_PADDING * 2),
-    //   sscreen.dprScreen.height
-    // );
-
-    // let panelX: number;
-    // if (panel.computedX === undefined) {
-    //   panelX = Math.floor((sscreen.dprScreen.width - panelW) * Math.random());
-    //   panel.computedX = panelX;
-    // } else {
-    //   panelX = panel.computedX;
-    // }
-
-    // let panelY: number;
-    // if (panel.computedY === undefined) {
-    //   if (panel.resetY) {
-    //     panelY = 0;
-    //   } else {
-    //     panelY = Math.max(
-    //       accumulatedY - Math.floor((panelH / 2) * Math.random()),
-    //       0
-    //     );
-    //   }
-    //   panel.computedY = panelY;
-    // } else {
-    //   panelY = panel.computedY;
-    // }
-
     const { ctx } = sscreen.dprScreen;
 
     // Make sure previous prompts always are a little faded.
@@ -423,52 +376,6 @@ function drawPanels(
     if (!panel.noBorder) {
       const tl = SpritesInfo.chrome_tl;
       const top = SpritesInfo.chrome_top;
-
-      // draw panel border
-
-      // type BorderDesc = {
-      //   t: [number, number];
-      //   r: number;
-      //   d: [number, number];
-      // };
-
-      // (<BorderDesc[]>[
-      //   {
-      //     t: [panelX, panelY],
-      //     r: 0,
-      //     d: [panelW, top.h * SpriteScale.TWO]
-      //   },
-      //   {
-      //     t: [panelX + panelW, panelY],
-      //     r: Math.PI / 2,
-      //     d: [panelH, top.h * SpriteScale.TWO]
-      //   },
-      //   {
-      //     t: [panelX + panelW, panelY + panelH],
-      //     r: Math.PI,
-      //     d: [panelW, top.h * SpriteScale.TWO]
-      //   },
-      //   {
-      //     t: [panelX, panelY + panelH],
-      //     r: -Math.PI / 2,
-      //     d: [panelH, top.h * SpriteScale.TWO]
-      //   }
-      // ]).forEach(b => {
-      //   ctx.save();
-      //   ctx.translate(b.t[0], b.t[1]);
-      //   ctx.rotate(b.r);
-      //   ctx.drawImage(
-      //     bgSheet.img,
-      //     top.x,
-      //     top.y,
-      //     top.w,
-      //     top.h,
-      //     0,
-      //     0,
-      //     b.d[0], b.d[1]
-      //   );
-      //   ctx.restore();
-      // });
 
       // top
       ctx.save();
@@ -633,13 +540,13 @@ function drawPanels(
     if (panel.ghostEffect) {
       // TODO: should this be over the entire panel, or smaller to represent actually seeing the ghost?
 
-      const glitchW = innerW / 8;
-      const glitchH = innerH / 4;
+      const glitchW = innerW / 5;
+      const glitchH = innerH / 2;
       // TODO: making x/y _slightly_ random might make it appear to waver...
       const glitchX = innerX + innerW / 4;
       const glitchY = innerY + innerH / 4;
 
-      sscreen.ghostGlitch(glitchX, glitchY, glitchW, glitchH, 5);
+      sscreen.ghostGlitch(glitchX, glitchY, glitchW, glitchH, 8);
     }
 
     accumulatedY = panelY + panelH;
@@ -915,8 +822,6 @@ async function loadPlayerData(state: GameState) {
               w: layout.w,
               h: layout.h,
               action: zone => {
-                console.log("tapped!", panel);
-
                 // Only one chance!
                 GameState.tapZones.length = 0;
 
@@ -972,6 +877,18 @@ async function loadPlayerData(state: GameState) {
                   // show ghost response as resetY panel
 
                   // Temporary.
+                  GameState.panels.push({ content: [""], noBorder: true });
+                  GameState.panels.push({ content: [""], noBorder: true });
+                  GameState.panels.push({ content: [""], noBorder: true });
+                  GameState.panels.push({ content: [""], noBorder: true });
+
+                  GameState.panels.push({
+                    content: ghost!.responses.wrong,
+                    resetY: true,
+                    icon: {
+                      ...NEXT_PROMPT_ICON
+                    }
+                  });
                   GameState.tapActions.push(() => window.location.reload());
                 }
               }
