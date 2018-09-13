@@ -69,6 +69,8 @@ type DrawableSprite = {
 
 type Panel = {
   content: string[] | DrawableSprite;
+  icon?: { x: number; y: number; flash: number; flashInterval: number; content?: string; };
+  action?: (p: Panel, time: number) => void;
   resetY?: boolean;
   noBorder?: boolean;
   tag?: string;
@@ -143,6 +145,7 @@ function drawPanels(
 
   for (let i = 0; i < panels.length; i++) {
     const panel = panels[i];
+    // const panelsRemain = i !== panels.length - 1;
 
     const dimensions = Array.isArray(panel.content)
       ? panel.content.map(line => pfont.measure(line, SpriteScale.TWO)).reduce(
@@ -431,6 +434,18 @@ function drawPanels(
     }
 
     accumulatedY = panelY + panelH;
+
+    if (panel.icon) {
+      if (panel.icon.flash <= panel.icon.flashInterval / 2) {
+        pfont.drawText(
+          panelX + panelW - (PANEL_PADDING * 4),
+          panelY + panelH - PANEL_PADDING,
+          panel.icon.content || '\x83',
+          SpriteScale.FOUR,
+          FontColor.WHITE
+        );
+      }
+    }
   }
 }
 
@@ -478,6 +493,8 @@ async function loadPlayerData(state: GameState) {
   const bgSheet = new SpriteSheet(SpritesPath.default);
   const pfont = new PicoFont(sscreen);
 
+  let time = 0;
+
   const gloop = {
     running: true,
     stop: () => {
@@ -486,7 +503,24 @@ async function loadPlayerData(state: GameState) {
     anim: () => {
       if (!gloop.running) return;
 
-      GameState.sincePrevTap = Math.max(GameState.sincePrevTap - 16, 0);
+      const DT = 16;
+      time += DT;
+
+      GameState.sincePrevTap = Math.max(GameState.sincePrevTap - DT, 0);
+      
+      GameState.panels.forEach((panel, i) => {
+        const isLast = i === GameState.panels.length - 1;
+        if (panel.action && isLast) {
+          panel.action(panel, time);
+        }
+
+        if (!panel.icon) return;
+        if (!isLast) return;
+        panel.icon.flash -= DT;
+        if (panel.icon.flash < 0) {
+          panel.icon.flash = panel.icon.flashInterval;
+        }
+      })
 
       sscreen.dprScreen.ctx!.fillStyle = "black";
       sscreen.dprScreen.ctx!.fillRect(
@@ -527,7 +561,20 @@ async function loadPlayerData(state: GameState) {
   });
 
   GameState.panels.push({
-    content: ["Acquiring spectral...", "triangulation!"]
+    content: ["Acquiring spectral...", "triangulation!"],
+    icon: {
+      x: 0, y: 0, flash: 0, flashInterval: 0, content: '',
+    },
+    action: (p, time) => {
+      const r = time % 300;
+      if (r < 100) {
+        p.icon!.content = '\x80';
+      } else if (r >= 100 && r < 200) {
+        p.icon!.content = '\x81';
+      } else {
+        p.icon!.content = '\x84';
+      }
+    }
   });
 
   let loc;
@@ -568,6 +615,12 @@ async function loadPlayerData(state: GameState) {
       noBorder: true,
       // Always help this be at the top...
       resetY: true,
+      icon: {
+        x: 0,
+        y: 0,
+        flash: 0,
+        flashInterval: 500,
+      }
     };
 
     GameState.panels.push(locPanel);
