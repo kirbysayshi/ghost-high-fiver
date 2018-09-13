@@ -63,17 +63,21 @@ export class PicoFont {
   }
 
   measure(text: string, scale: SpriteScale = SpriteScale.ONE) {
-    // TODO: if we use double wide glyphs, this will need to be adjusted.
-    const w: SpritePixelUnit = text
-      .split("")
-      .reduce(
-        (total, chr) =>
-          total +
-          (chr.charCodeAt(0) >= 128 ? FONT_WIDTH * 2 : FONT_WIDTH) * scale,
-        0
-      );
-    const h: SpritePixelUnit = FONT_HEIGHT * scale;
-    return { w, h };
+
+    const dims = this.drawText(0, 0, text, scale, FontColor.BLACK, true);
+    return dims;
+
+    // // TODO: if we use double wide glyphs, this will need to be adjusted.
+    // const w: SpritePixelUnit = text
+    //   .split("")
+    //   .reduce(
+    //     (total, chr) =>
+    //       total +
+    //       (chr.charCodeAt(0) >= 128 ? FONT_WIDTH * 2 : FONT_WIDTH) * scale,
+    //     0
+    //   );
+    // const h: SpritePixelUnit = FONT_HEIGHT * scale;
+    // return { w, h };
   }
 
   // heightOf (scale: SpriteScale = SpriteScale.ONE): SpritePixelUnit {
@@ -86,7 +90,8 @@ export class PicoFont {
     y: SpritePixelUnit,
     text: string,
     scale = SpriteScale.ONE,
-    color = FontColor.BLACK
+    color = FontColor.BLACK,
+    measureOnly = false,
   ) {
     let screenX = x; //this.sscreen.pts(x);
     let screenY = y; //this.sscreen.pts(y);
@@ -116,18 +121,28 @@ export class PicoFont {
       // draw to screen
       const img = color === FontColor.WHITE ? this.white.img : this.black.img;
 
-      this.sscreen.drawImg(
-        img,
-        FONT_DATA.x + col * (FONT_WIDTH * 2),
-        FONT_DATA.y + row * FONT_HEIGHT,
-        FONT_WIDTH * 2,
-        FONT_HEIGHT,
-        screenX,
-        screenY,
-        scale
-      );
+      if (!measureOnly) {
+        this.sscreen.drawImg(
+          img,
+          FONT_DATA.x + col * (FONT_WIDTH * 2),
+          FONT_DATA.y + row * FONT_HEIGHT,
+          FONT_WIDTH * 2,
+          FONT_HEIGHT,
+          screenX,
+          screenY,
+          scale
+        );  
+      }
 
       screenX += w * scale;
+    }
+
+    return {
+      w: screenX - x,
+      // Add one pixel just so there is spacing when multiple lines
+      // are involved. This is probably not the right place to do it,
+      // but the scale needs to be taken into account.
+      h: (FONT_HEIGHT + 1) * scale,
     }
   }
 }
