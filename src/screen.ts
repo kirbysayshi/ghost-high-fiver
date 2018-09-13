@@ -38,7 +38,7 @@ export class DPRScreen {
   constructor(
     public root: HTMLElement,
     public width: number,
-    public aspectRatio = 1.4,
+    public aspectRatio = 1.5,
     public fillViewport = true
   ) {
     this.resize();

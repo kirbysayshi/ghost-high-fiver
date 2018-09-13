@@ -68,9 +68,9 @@ type DrawableSprite = {
 };
 
 type Panel = {
-  // x: number;
-  // y: number;
   content: string[] | DrawableSprite;
+  resetY?: boolean;
+  noBorder?: boolean;
   tag?: string;
   ghostEffect?: boolean;
   computedX?: number;
@@ -125,12 +125,17 @@ function mapUserLocationToGrid(grid: typeof MapGrid, state: PlayerState) {
   state.cell = idx;
 }
 
-function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
+function drawPanels(
+  sscreen: SpriteScreen,
+  bgSheet: SpriteSheet,
+  pfont: PicoFont,
+  panels: Panel[]
+) {
   let accumulatedY = 0;
 
   // const textScale = Math.floor(window.innerWidth / (pfont.measure(" ", SpriteScale.ONE).h / 320));
 
-  const PANEL_PADDING = pfont.measure(" ", SpriteScale.ONE).h;
+  const PANEL_PADDING = SpritesInfo.chrome_tl.w * SpriteScale.TWO;
   const MIN_PANEL_INNER_HEIGHT = pfont.measure(" ", SpriteScale.TWO).h * 2;
 
   // TODO: add check where if next panel will be off the screen, put it at the top!
@@ -156,11 +161,12 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
     // Draw panel
     const { ctx } = sscreen.dprScreen;
     const panelW = Math.min(
-      dimensions.w + PANEL_PADDING * 2,
+      dimensions.w + (panel.noBorder ? 0 : PANEL_PADDING * 2),
       sscreen.dprScreen.width
     );
     const panelH = Math.min(
-      Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) + PANEL_PADDING * 2,
+      Math.max(dimensions.h, MIN_PANEL_INNER_HEIGHT) +
+        (panel.noBorder ? 0 : PANEL_PADDING * 2),
       sscreen.dprScreen.height
     );
 
@@ -174,42 +180,223 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
 
     let panelY: number;
     if (panel.computedY === undefined) {
-      panelY = Math.max(
-        accumulatedY - Math.floor((panelH / 2) * Math.random()),
-        0
-      );
+      if (panel.resetY) {
+        panelY = 0;
+      } else {
+        panelY = Math.max(
+          accumulatedY - Math.floor((panelH / 2) * Math.random()),
+          0
+        );
+      }
       panel.computedY = panelY;
     } else {
       panelY = panel.computedY;
     }
 
     // Make sure previous prompts always are a little faded.
-    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-    ctx.fillRect(0, 0, sscreen.dprScreen.width, sscreen.dprScreen.height);
+    // if (panel.resetY) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.fillRect(0, 0, sscreen.dprScreen.width, sscreen.dprScreen.height);
+    // }
 
-    const innerX = panelX + PANEL_PADDING;
-    const innerY = panelY + PANEL_PADDING;
-    const innerW = panelW - 1 - PANEL_PADDING * 2;
-    const innerH = panelH - PANEL_PADDING * 2;
+    const innerX = panelX + (panel.noBorder ? 0 : PANEL_PADDING);
+    const innerY = panelY + (panel.noBorder ? 0 : PANEL_PADDING);
+    const innerW = panelW - (panel.noBorder ? 0 : PANEL_PADDING * 2);
+    const innerH = panelH - (panel.noBorder ? 0 : PANEL_PADDING * 2);
 
     // ctx.fillStyle = "grey";
     ctx.fillStyle = "blue";
     ctx.fillRect(panelX, panelY, panelW, panelH);
+
+    if (!panel.noBorder) {
+      const tl = SpritesInfo.chrome_tl;
+      const top = SpritesInfo.chrome_top;
+
+      // draw panel border
+
+      // type BorderDesc = {
+      //   t: [number, number];
+      //   r: number;
+      //   d: [number, number];
+      // };
+
+      // (<BorderDesc[]>[
+      //   {
+      //     t: [panelX, panelY],
+      //     r: 0,
+      //     d: [panelW, top.h * SpriteScale.TWO]
+      //   },
+      //   {
+      //     t: [panelX + panelW, panelY],
+      //     r: Math.PI / 2,
+      //     d: [panelH, top.h * SpriteScale.TWO]
+      //   },
+      //   {
+      //     t: [panelX + panelW, panelY + panelH],
+      //     r: Math.PI,
+      //     d: [panelW, top.h * SpriteScale.TWO]
+      //   },
+      //   {
+      //     t: [panelX, panelY + panelH],
+      //     r: -Math.PI / 2,
+      //     d: [panelH, top.h * SpriteScale.TWO]
+      //   }
+      // ]).forEach(b => {
+      //   ctx.save();
+      //   ctx.translate(b.t[0], b.t[1]);
+      //   ctx.rotate(b.r);
+      //   ctx.drawImage(
+      //     bgSheet.img,
+      //     top.x,
+      //     top.y,
+      //     top.w,
+      //     top.h,
+      //     0,
+      //     0,
+      //     b.d[0], b.d[1]
+      //   );
+      //   ctx.restore();
+      // });
+
+      // top
+      ctx.save();
+      ctx.translate(0, 0);
+      ctx.rotate(0);
+      ctx.drawImage(
+        bgSheet.img,
+        top.x,
+        top.y,
+        top.w,
+        top.h,
+        panelX,
+        panelY,
+        panelW,
+        top.h * SpriteScale.TWO
+      );
+      ctx.restore();
+
+      // right
+      ctx.save();
+      ctx.translate(panelX + panelW, panelY);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(
+        bgSheet.img,
+        top.x,
+        top.y,
+        top.w,
+        top.h,
+        0,
+        0,
+        panelH,
+        top.h * SpriteScale.TWO
+      );
+      ctx.restore();
+
+      // bottom
+      ctx.save();
+      ctx.translate(panelX + panelW, panelY + panelH);
+      ctx.rotate(Math.PI);
+      ctx.drawImage(
+        bgSheet.img,
+        top.x,
+        top.y,
+        top.w,
+        top.h,
+        0,
+        0,
+        panelW,
+        top.h * SpriteScale.TWO
+      );
+      ctx.restore();
+
+      // left
+      ctx.save();
+      ctx.translate(panelX, panelY + panelH);
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(
+        bgSheet.img,
+        top.x,
+        top.y,
+        top.w,
+        top.h,
+        0,
+        0,
+        panelH,
+        top.h * SpriteScale.TWO
+      );
+      ctx.restore();
+
+      // top left
+      sscreen.drawImg(
+        bgSheet.img,
+        tl.x,
+        tl.y,
+        tl.w,
+        tl.h,
+        panelX,
+        panelY,
+        SpriteScale.TWO
+      );
+
+      // top right
+      ctx.save();
+      ctx.translate(panelX + panelW, panelY);
+      ctx.scale(-1, 1);
+      sscreen.drawImg(
+        bgSheet.img,
+        tl.x,
+        tl.y,
+        tl.w,
+        tl.h,
+        0,
+        0,
+        SpriteScale.TWO
+      );
+      ctx.restore();
+
+      // bottom right
+      ctx.save();
+      ctx.translate(panelX + panelW, panelY + panelH);
+      ctx.scale(-1, -1);
+      sscreen.drawImg(
+        bgSheet.img,
+        tl.x,
+        tl.y,
+        tl.w,
+        tl.h,
+        0,
+        0,
+        SpriteScale.TWO
+      );
+      ctx.restore();
+
+      // bottom left
+      ctx.save();
+      ctx.translate(panelX, panelY + panelH);
+      ctx.scale(1, -1);
+      sscreen.drawImg(
+        bgSheet.img,
+        tl.x,
+        tl.y,
+        tl.w,
+        tl.h,
+        0,
+        0,
+        SpriteScale.TWO
+      );
+      ctx.restore();
+    }
+
     ctx.fillStyle = "blue";
-    ctx.fillRect(
-      innerX,
-      innerY,
-      innerW,
-      innerH,
-    );
+    ctx.fillRect(innerX, innerY, innerW, innerH);
 
     if (Array.isArray(panel.content)) {
       // draw the text!
       let lineY = 0;
       panel.content.forEach(line => {
         pfont.drawText(
-          panelX + PANEL_PADDING,
-          panelY + lineY + PANEL_PADDING,
+          panelX + (panel.noBorder ? 0 : PANEL_PADDING),
+          panelY + lineY + (panel.noBorder ? 0 : PANEL_PADDING),
           line,
           SpriteScale.TWO,
           FontColor.WHITE
@@ -225,21 +412,20 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
         desc.y,
         desc.w,
         desc.h,
-        panelX + PANEL_PADDING,
-        panelY + PANEL_PADDING,
+        panelX + (panel.noBorder ? 0 : PANEL_PADDING),
+        panelY + (panel.noBorder ? 0 : PANEL_PADDING),
         scale
       );
     }
 
     if (panel.ghostEffect) {
-
       // TODO: should this be over the entire panel, or smaller to represent actually seeing the ghost?
 
-      const glitchW = innerW / 8 
-      const glitchH = innerH / 4 
+      const glitchW = innerW / 8;
+      const glitchH = innerH / 4;
       // TODO: making x/y _slightly_ random might make it appear to waver...
-      const glitchX = innerX + (innerW / 4)
-      const glitchY = innerY + (innerH / 4)
+      const glitchX = innerX + innerW / 4;
+      const glitchY = innerY + innerH / 4;
 
       sscreen.ghostGlitch(glitchX, glitchY, glitchW, glitchH, 5);
     }
@@ -249,7 +435,7 @@ function drawPanels(sscreen: SpriteScreen, pfont: PicoFont, panels: Panel[]) {
 }
 
 function randomBetween(min: number, max: number) {
-  return min + (Math.random() * (max - min));
+  return min + Math.random() * (max - min);
 }
 
 async function delay(action: () => void, delay = 300) {
@@ -285,9 +471,9 @@ async function loadPlayerData(state: GameState) {
   // Save inventory to idb.
 
   // const innerWidth = window.innerWidth;
-  // const targetWidth = innerWidth > 
+  // const targetWidth = innerWidth >
 
-  const dprScreen = new DPRScreen(document.body, 320);
+  const dprScreen = new DPRScreen(document.body, 256);
   const sscreen = new SpriteScreen(dprScreen);
   const bgSheet = new SpriteSheet(SpritesPath.default);
   const pfont = new PicoFont(sscreen);
@@ -310,7 +496,7 @@ async function loadPlayerData(state: GameState) {
         sscreen.dprScreen.height
       );
 
-      drawPanels(sscreen, pfont, GameState.panels);
+      drawPanels(sscreen, bgSheet, pfont, GameState.panels);
       requestAnimationFrame(gloop.anim);
     }
   };
@@ -320,7 +506,7 @@ async function loadPlayerData(state: GameState) {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       gloop.stop();
-      console.log('stopped');
+      console.log("stopped");
     }
   });
 
@@ -379,9 +565,9 @@ async function loadPlayerData(state: GameState) {
         img: bgSheet.img,
         scale: SpriteScale.TWO
       },
-      tag: 'loc',
+      noBorder: true,
       // Always help this be at the top...
-      computedY: 0
+      resetY: true,
     };
 
     GameState.panels.push(locPanel);
@@ -391,8 +577,8 @@ async function loadPlayerData(state: GameState) {
     GameState.tapActions.push(() => {
       GameState.panels.push({
         content: ['"Back at the place again..."']
-      })
-    })
+      });
+    });
 
     if (
       GameState.player.saveData.solvedLocations.find(
@@ -424,8 +610,7 @@ async function loadPlayerData(state: GameState) {
   const MIN_TAP_INTERVAL_MS = 100;
 
   const nextTapAction = () => {
-
-    if(GameState.sincePrevTap > 0) {
+    if (GameState.sincePrevTap > 0) {
       return;
     }
 
@@ -435,7 +620,7 @@ async function loadPlayerData(state: GameState) {
     if (next) {
       next();
     }
-  }
+  };
 
   // temporary, just to kill rendering on the phone.
   sscreen.dprScreen.cvs.addEventListener("touchstart", e => {
@@ -445,10 +630,9 @@ async function loadPlayerData(state: GameState) {
     nextTapAction();
   });
 
-  sscreen.dprScreen.cvs.addEventListener('click', e => {
+  sscreen.dprScreen.cvs.addEventListener("click", e => {
     nextTapAction();
   });
-
 })();
 
 // Prevent zooming and extra scrolling

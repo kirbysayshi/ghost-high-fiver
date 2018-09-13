@@ -181,6 +181,32 @@
         </struct>
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
+            <key type="filename">raw/chrome_tl.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>1,1,2,2</rect>
+                <key>scale9Paddings</key>
+                <rect>1,1,2,2</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">raw/chrome_top.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>0,1,1,2</rect>
+                <key>scale9Paddings</key>
+                <rect>0,1,1,2</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
             <key type="filename">raw/ghost_bat.png</key>
             <key type="filename">raw/ghost_bun.png</key>
             <key type="filename">raw/ghost_cat.png</key>
@@ -189,6 +215,7 @@
             <key type="filename">raw/ghost_jaws.png</key>
             <key type="filename">raw/ghost_petrified.png</key>
             <key type="filename">raw/ghost_plant.png</key>
+            <key type="filename">raw/ghost_shy.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -246,6 +273,9 @@
             <filename>raw/low_color/loc_street.png</filename>
             <filename>raw/low_color/loc_tarot.png</filename>
             <filename>raw/ghost_jaws.png</filename>
+            <filename>raw/ghost_shy.png</filename>
+            <filename>raw/chrome_tl.png</filename>
+            <filename>raw/chrome_top.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>
