@@ -18,6 +18,8 @@ type GhostAnswer = string;
 type GhostAnswerIndex = number;
 
 type GhostPrompt = {
+  name: string;
+  // desc: SpriteDesc;
   problem: string[];
   answers: GhostAnswer[];
   correct: GhostAnswerIndex;
@@ -28,13 +30,117 @@ type GhostPrompt = {
 };
 
 const Ghosts = new Map<SpriteDesc, GhostPrompt>();
+
 Ghosts.set(SpritesInfo.ghost_bun, {
-  problem: ["I'm so fluffy and cuddly,", "no one will ever be scared of me!"],
+  name: "BUNNY GHOST",
+  problem: [
+    "I'm so fluffy and cuddly,",
+    "no one will ever be scared",
+    "of me!"
+  ],
   answers: ["Hug it", "Love it", "Yell at it", "Back slowly away from it"],
   correct: 3,
   responses: {
     right: ["I scared you!?", "AMAZING WILL YOU BE MY FRIEND?"],
     wrong: ["Ugh please don't touch me."]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_bat, {
+  name: "",
+  problem: [],
+  answers: [],
+  correct: -1,
+  responses: {
+    right: [""],
+    wrong: [""]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_cat, {
+  name: "",
+  problem: [],
+  answers: [],
+  correct: -1,
+  responses: {
+    right: [""],
+    wrong: [""]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_hungry, {
+  name: "",
+  problem: [],
+  answers: [],
+  correct: -1,
+  responses: {
+    right: [""],
+    wrong: [""]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_ink, {
+  name: "INKY GHOST",
+  problem: [
+    "Everywhere I go I leave",
+    "a trail!",
+    "I'll never scare anyone",
+    "like this..."
+  ],
+  answers: ["High five it", "Give it a pen", "Poke it", "Give it some paper"],
+  correct: 1,
+  responses: {
+    right: ["Now I can write scary letters!", "Will you be my friend?"],
+    wrong: ["Sigh. Follow the trail when", "you think of something better."]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_jaws, {
+  name: "",
+  problem: [],
+  answers: [],
+  correct: -1,
+  responses: {
+    right: [""],
+    wrong: [""]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_petrified, {
+  name: "",
+  problem: [],
+  answers: [],
+  correct: -1,
+  responses: {
+    right: [""],
+    wrong: [""]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_plant, {
+  name: "SPROUTY SPIRIT",
+  problem: ["I was taken from my forest", "and I really miss my garden."],
+  answers: [
+    "Water it",
+    "Coax it into the sun",
+    "Give it a pot",
+    'Say, "I\'m sorry"'
+  ],
+  correct: 2,
+  responses: {
+    right: ["I can grow things with you!", "YOUR HOME WILL BE MY FOREST!"],
+    wrong: ["My plant love is wasted..."]
+  }
+});
+
+Ghosts.set(SpritesInfo.ghost_shy, {
+  name: "",
+  problem: [],
+  answers: [],
+  correct: -1,
+  responses: {
+    right: [""],
+    wrong: [""]
   }
 });
 
@@ -67,13 +173,29 @@ type DrawableSprite = {
   scale: number;
 };
 
+type PanelIcon = {
+  x: number;
+  y: number;
+  flash: number;
+  flashInterval: number;
+  content?: string;
+};
+
+const NEXT_PROMPT_ICON: PanelIcon = {
+  x: 0,
+  y: 0,
+  flash: 0,
+  flashInterval: 500
+};
+
 type Panel = {
   content: string[] | DrawableSprite;
-  icon?: { x: number; y: number; flash: number; flashInterval: number; content?: string; };
+  icon?: PanelIcon;
   action?: (p: Panel, time: number) => void;
   resetY?: boolean;
   noBorder?: boolean;
-  tag?: string;
+  noDimPrev?: boolean;
+  // tag?: string;
   ghostEffect?: boolean;
   computedX?: number;
   computedY?: number;
@@ -197,10 +319,10 @@ function drawPanels(
     }
 
     // Make sure previous prompts always are a little faded.
-    // if (panel.resetY) {
+    if (!panel.noDimPrev) {
       ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
       ctx.fillRect(0, 0, sscreen.dprScreen.width, sscreen.dprScreen.height);
-    // }
+    }
 
     const innerX = panelX + (panel.noBorder ? 0 : PANEL_PADDING);
     const innerY = panelY + (panel.noBorder ? 0 : PANEL_PADDING);
@@ -438,9 +560,9 @@ function drawPanels(
     if (panel.icon) {
       if (panel.icon.flash <= panel.icon.flashInterval / 2) {
         pfont.drawText(
-          panelX + panelW - (PANEL_PADDING * 4),
+          panelX + panelW - PANEL_PADDING * 4,
           panelY + panelH - PANEL_PADDING,
-          panel.icon.content || '\x83',
+          panel.icon.content || "\x83",
           SpriteScale.FOUR,
           FontColor.WHITE
         );
@@ -507,7 +629,7 @@ async function loadPlayerData(state: GameState) {
       time += DT;
 
       GameState.sincePrevTap = Math.max(GameState.sincePrevTap - DT, 0);
-      
+
       GameState.panels.forEach((panel, i) => {
         const isLast = i === GameState.panels.length - 1;
         if (panel.action && isLast) {
@@ -520,7 +642,7 @@ async function loadPlayerData(state: GameState) {
         if (panel.icon.flash < 0) {
           panel.icon.flash = panel.icon.flashInterval;
         }
-      })
+      });
 
       sscreen.dprScreen.ctx!.fillStyle = "black";
       sscreen.dprScreen.ctx!.fillRect(
@@ -563,16 +685,17 @@ async function loadPlayerData(state: GameState) {
   GameState.panels.push({
     content: ["Acquiring spectral...", "triangulation!"],
     icon: {
-      x: 0, y: 0, flash: 0, flashInterval: 0, content: '',
+      ...NEXT_PROMPT_ICON,
+      content: ""
     },
     action: (p, time) => {
       const r = time % 300;
       if (r < 100) {
-        p.icon!.content = '\x80';
+        p.icon!.content = "\x80";
       } else if (r >= 100 && r < 200) {
-        p.icon!.content = '\x81';
+        p.icon!.content = "\x81";
       } else {
-        p.icon!.content = '\x84';
+        p.icon!.content = "\x84";
       }
     }
   });
@@ -598,13 +721,16 @@ async function loadPlayerData(state: GameState) {
 
   if (GameState.player.cell !== null) {
     GameState.panels.push({
-      content: ["Acquired!"]
+      content: ["Acquired!"],
+      noDimPrev: true,
     });
 
     // Always show Location panel...
     const location = MapGrid.cells[GameState.player.cell];
 
-    await delay(() => {}, 1000);
+    const solved = GameState.player.saveData.solvedLocations.find(
+      idx => idx === GameState.player.cell
+    );
 
     const locPanel: Panel = {
       content: {
@@ -616,51 +742,86 @@ async function loadPlayerData(state: GameState) {
       // Always help this be at the top...
       resetY: true,
       icon: {
-        x: 0,
-        y: 0,
-        flash: 0,
-        flashInterval: 500,
+        ...NEXT_PROMPT_ICON,
+        content: solved ? undefined : "!?"
       }
     };
 
     GameState.panels.push(locPanel);
 
-    // TODO: tell the user they need to tap!!!!!
-
-    GameState.tapActions.push(() => {
-      GameState.panels.push({
-        content: ['"Back at the place again..."']
-      });
-    });
-
-    if (
-      GameState.player.saveData.solvedLocations.find(
-        idx => idx === GameState.player.cell
-      )
-    ) {
+    if (solved) {
       // location is alrady solved
+      GameState.tapActions.push(
+        () => {
+          GameState.panels.push({
+            content: ["\x8c Back here again..."],
+            noDimPrev: true,
+            icon: {
+              ...NEXT_PROMPT_ICON
+            }
+          });
+        },
+        () => {
+          GameState.panels.push({
+            content: ["\x8c I don't see any ghosts around"],
+            noDimPrev: true,
+            icon: {
+              ...NEXT_PROMPT_ICON
+            }
+          });
+        }
+      );
     } else {
       // show prompt!
-
-      // TODO: how to add ghost effect to panel???
-      // Maybe a panel could have a tagged name to reference?
-
-      // This will only be the first...
-      // const locPanel = GameState.panels.filter(p => p.tag === 'loc').pop();
-      // if (locPanel) {
-      //   // something went really wrong if there is no panel...
-      // }
-
       locPanel.ghostEffect = true;
-
       const ghost = Ghosts.get(location.ghost);
       console.log(ghost);
+
+      GameState.tapActions.push(
+        () => {
+          GameState.panels.push({
+            content: ["\x8c Ahh! A ghost!"],
+            noDimPrev: true,
+            icon: {
+              ...NEXT_PROMPT_ICON
+            }
+          });
+        },
+        () => {
+          GameState.panels.push({
+            content: ["It has something to say..."],
+            noDimPrev: true,
+            icon: {
+              ...NEXT_PROMPT_ICON
+            }
+          });
+        },
+        () =>
+          GameState.panels.push({
+            content: ghost!.problem,
+            noDimPrev: true,
+            icon: { ...NEXT_PROMPT_ICON }
+          }),
+        () => {
+
+          ghost!.answers.forEach(answer => {
+            GameState.panels.push({
+              content: ['\x91 ' + answer],
+              noDimPrev: true,
+              computedX: pfont.measure(' ', SpriteScale.TWO).w,
+              // icon: { ...NEXT_PROMPT_ICON }
+            });
+          })
+
+          
+        }
+      );
     }
   } else {
     // couldn't get location, and it didn't throw?
   }
 
-  const MIN_TAP_INTERVAL_MS = 100;
+  const MIN_TAP_INTERVAL_MS = 500;
 
   const nextTapAction = () => {
     if (GameState.sincePrevTap > 0) {
