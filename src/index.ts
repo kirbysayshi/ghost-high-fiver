@@ -147,13 +147,21 @@ Ghosts.set(SpritesInfo.ghost_shy, {
 });
 
 const MapGrid = {
-  cols: 1,
+  cols: 3,
   rows: 1,
   cells: [
     {
       ghost: SpritesInfo.ghost_bun,
       location: SpritesInfo.loc_pier
-    }
+    },
+    {
+      ghost: SpritesInfo.ghost_ink,
+      location: SpritesInfo.loc_street
+    },
+    {
+      ghost: SpritesInfo.ghost_plant,
+      location: SpritesInfo.loc_abandoned
+    },
   ]
 };
 
