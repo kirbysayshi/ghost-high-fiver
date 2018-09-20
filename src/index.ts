@@ -161,7 +161,7 @@ const MapGrid = {
     {
       ghost: SpritesInfo.ghost_plant,
       location: SpritesInfo.loc_abandoned
-    },
+    }
   ]
 };
 
@@ -209,6 +209,12 @@ type Panel = {
   ghostEffect?: boolean;
   computedX?: number;
   computedY?: number;
+  drawAction?: (
+    p: Panel,
+    layout: PanelMeasure,
+    sscreen: SpriteScreen,
+    time: number
+  ) => void;
 };
 
 type TapZone = SpriteDesc & {
@@ -238,7 +244,33 @@ const GameState: GameState = {
 };
 
 async function getUserLocation() {
+  const qs = window.location.search
+    .slice(1)
+    .split("&")
+    .reduce((all, pair) => {
+      const [key, val] = pair.split("=");
+      all.set(key, val);
+      return all;
+    }, new Map());
+
+  const [lat, lng] = [parseFloat(qs.get("lat")), parseFloat(qs.get("lng"))];
+
   return new Promise<Position>((resolve, reject) => {
+    if (lat && lng) {
+      return resolve({
+        coords: {
+          latitude: lat,
+          longitude: lng,
+          accuracy: 0,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      });
+    }
+
     navigator.geolocation.getCurrentPosition(resolve, reject, {
       enableHighAccuracy: true,
       timeout: 30000,
@@ -247,16 +279,84 @@ async function getUserLocation() {
   });
 }
 
+type Meters = number;
+
+// https://blog.utoctadel.com.ar/2016/05/20/fast-haversine.html
+const haversine = (function() {
+  // (mean) radius of Earth (meters)
+  const R = 6378137;
+  const PI_360 = Math.PI / 360;
+
+  return function dist(
+    latA: number,
+    lngA: number,
+    latB: number,
+    lngB: number
+  ): Meters {
+    const cLat = Math.cos((latA + latB) * PI_360);
+    const dLat = (latB - latA) * PI_360;
+    const dLon = (lngB - lngA) * PI_360;
+
+    const f = dLat * dLat + cLat * cLat * dLon * dLon;
+    const c = 2 * Math.atan2(Math.sqrt(f), Math.sqrt(1 - f));
+
+    return (R * c) as Meters;
+  };
+})();
+
+type Radians = number;
+
+function bearing(
+  latA: number,
+  lngA: number,
+  latB: number,
+  lngB: number
+): Radians {
+  var y = Math.sin(lngB - lngA) * Math.cos(latB);
+  var x =
+    Math.cos(latA) * Math.sin(latB) -
+    Math.sin(latA) * Math.cos(latB) * Math.cos(lngB - lngA);
+  return Math.atan2(y, x) as Radians;
+}
+
 function mapUserLocationToGrid(grid: typeof MapGrid, state: PlayerState) {
-  const cellWidth = 20; // feet? which means the entire world is only 160 ft sq...
+  // What do the various decimal places of a lat/lng imply in distance?
+  // https://gis.stackexchange.com/a/8674
+  // Fifth decimal place is roughly up to 1.1m: 0.00000
+
+  const cellWidth = 20; // meters
   const mapWidth = grid.cols * cellWidth;
   const mapHeight = grid.rows * cellWidth;
 
   if (!state.geo) return;
 
-  // https://stackoverflow.com/a/2911469/169491
-  const x = (mapWidth * (180 + state.geo.coords.longitude)) / 360;
-  const y = (mapHeight * (90 - state.geo.coords.latitude)) / 180;
+  const origin = {
+    lng: 0,
+    lat: 0
+  };
+
+  const dist = haversine(
+    origin.lat,
+    origin.lng,
+    state.geo.coords.latitude,
+    state.geo.coords.longitude
+  );
+
+  const theta = bearing(
+    origin.lat,
+    origin.lng,
+    state.geo.coords.latitude,
+    state.geo.coords.longitude
+  );
+
+  const absX = Math.cos(theta) * dist;
+  const absY = Math.sin(theta) * dist;
+
+  const relX = absX % mapWidth;
+  const relY = absY % mapHeight;
+
+  const x = relX < 0 ? mapWidth + relX : relX;
+  const y = relY < 0 ? mapHeight + relY : relY;
 
   const col = Math.floor((x / mapWidth) * grid.cols);
   const row = Math.floor((y / mapHeight) * grid.rows);
@@ -557,6 +657,10 @@ function drawPanels(
       sscreen.ghostGlitch(glitchX, glitchY, glitchW, glitchH, 8);
     }
 
+    if (panel.drawAction) {
+      panel.drawAction(panel, layout, sscreen, 0);
+    }
+
     accumulatedY = panelY + panelH;
 
     if (panel.icon) {
@@ -726,6 +830,63 @@ async function loadPlayerData(state: GameState) {
       content: ["Acquired!"],
       noDimPrev: true
     });
+
+    const mapPanel: Panel = {
+      content: {
+        desc: { x: 0, y: 0, w: 64, h: 64 },
+        img: new Image(),
+        scale: SpriteScale.TWO
+      },
+      icon: {
+        ...NEXT_PROMPT_ICON
+      },
+      drawAction: (p: Panel, layout, sscreen) => {
+        // HACK: draw the map
+        const { ctx } = sscreen.dprScreen;
+        const cellSize = 8;
+
+        const row = Math.floor(GameState.player.cell! / MapGrid.cols);
+        const col = GameState.player.cell! % MapGrid.cols;
+
+        for (let i = 0; i < MapGrid.rows; i++) {
+          for (let j = 0; j < MapGrid.cols; j++) {
+            ctx.fillStyle = "pink";
+            ctx.fillRect(
+              layout.x + layout.padding + j * cellSize + 1,
+              layout.y + layout.padding + i * cellSize + 1,
+              cellSize,
+              cellSize
+            );
+            if (i === row && j === col) {
+              ctx.fillStyle = "yellow";
+              ctx.fillRect(
+                layout.x + layout.padding + j * cellSize + 1,
+                layout.y + layout.padding + i * cellSize + 1,
+                cellSize,
+                cellSize
+              );
+            }
+          }
+        }
+      }
+    };
+
+    GameState.tapActions.push(
+      () => {
+        GameState.panels.push({
+          content: [
+            GameState.player.geo!.coords.latitude + ", ",
+            GameState.player.geo!.coords.longitude + ""
+          ],
+          icon: {
+            ...NEXT_PROMPT_ICON
+          }
+        });
+      },
+      () => {
+        GameState.panels.push(mapPanel);
+      }
+    );
 
     // Always show Location panel...
     const location = MapGrid.cells[GameState.player.cell];
