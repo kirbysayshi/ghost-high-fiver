@@ -147,21 +147,59 @@ Ghosts.set(SpritesInfo.ghost_shy, {
 });
 
 const MapGrid = {
-  cols: 3,
-  rows: 1,
+  cols: 4,
+  rows: 3,
   cells: [
     {
       ghost: SpritesInfo.ghost_bun,
       location: SpritesInfo.loc_pier
     },
     {
+      ghost: null,
+      location: SpritesInfo.loc_pier,
+    },
+    {
       ghost: SpritesInfo.ghost_ink,
       location: SpritesInfo.loc_street
     },
     {
+      ghost: null,
+      location: SpritesInfo.loc_tarot,
+    },
+
+    {
       ghost: SpritesInfo.ghost_plant,
       location: SpritesInfo.loc_abandoned
-    }
+    },
+    {
+      ghost: null,
+      location: SpritesInfo.loc_abandoned,
+    },
+    {
+      ghost: null,
+      location: SpritesInfo.loc_pier,
+    },
+    {
+      ghost: null,
+      location: SpritesInfo.loc_pier,
+    },
+
+    {
+      ghost: null,
+      location: SpritesInfo.loc_abandoned
+    },
+    {
+      ghost: null,
+      location: SpritesInfo.loc_abandoned,
+    },
+    {
+      ghost: null,
+      location: SpritesInfo.loc_pier,
+    },
+    {
+      ghost: null,
+      location: SpritesInfo.loc_pier,
+    },
   ]
 };
 
@@ -852,18 +890,18 @@ async function loadPlayerData(state: GameState) {
           for (let j = 0; j < MapGrid.cols; j++) {
             ctx.fillStyle = "pink";
             ctx.fillRect(
-              layout.x + layout.padding + j * cellSize + 1,
-              layout.y + layout.padding + i * cellSize + 1,
-              cellSize,
-              cellSize
+              layout.x + layout.padding + j * cellSize,
+              layout.y + layout.padding + i * cellSize,
+              cellSize - 2,
+              cellSize - 2
             );
             if (i === row && j === col) {
               ctx.fillStyle = "yellow";
               ctx.fillRect(
-                layout.x + layout.padding + j * cellSize + 1,
-                layout.y + layout.padding + i * cellSize + 1,
-                cellSize,
-                cellSize
+                layout.x + layout.padding + j * cellSize,
+                layout.y + layout.padding + i * cellSize,
+                cellSize - 2,
+                cellSize - 2
               );
             }
           }
@@ -883,7 +921,6 @@ async function loadPlayerData(state: GameState) {
 
     GameState.tapActions.push(
       () => {
-        
         GameState.panels.push(mapPanel);
       }
     );
@@ -919,7 +956,7 @@ async function loadPlayerData(state: GameState) {
       GameState.tapActions.push(
         () => {
           GameState.panels.push({
-            content: ["\x8c Back here again..."],
+            content: ["Back here again..."],
             noDimPrev: true,
             icon: {
               ...NEXT_PROMPT_ICON
@@ -928,7 +965,19 @@ async function loadPlayerData(state: GameState) {
         },
         () => {
           GameState.panels.push({
-            content: ["\x8c I don't see any ghosts around"],
+            content: ["I don't see any ghosts around"],
+            noDimPrev: true,
+            icon: {
+              ...NEXT_PROMPT_ICON
+            }
+          });
+        }
+      );
+    } else if (!location.ghost) {
+      GameState.tapActions.push(
+        () => {
+          GameState.panels.push({
+            content: ["I don't see any ghosts around"],
             noDimPrev: true,
             icon: {
               ...NEXT_PROMPT_ICON
@@ -1001,7 +1050,7 @@ async function loadPlayerData(state: GameState) {
                   // show ghost as resetY panel
                   GameState.panels.push({
                     content: {
-                      desc: location.ghost,
+                      desc: location.ghost!,
                       img: bgSheet.img,
                       scale: SpriteScale.FOUR
                     },
