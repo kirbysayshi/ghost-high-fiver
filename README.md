@@ -178,3 +178,12 @@ Overall I'm content: I think there's an interesting idea here, and was able to s
 
 -420 bytes remain. :D
 
+
+
+### 2018-09-20
+
+Tried to test geolocation mapping, and discovered that it did not work how I thought: it would still take traveling around the entire real globe to traverse the in-game world! Thought deeply about it for several hours. Talked to Al, and eventually discovered that with some trig plus a heading could modulo my way to victory! Hopefully.
+
+Added a temporary map screen to aid debugging geolocation, and printing geo coordinates. A 4x3 map in place too.
+
+Moved lots of code around, since the one file was getting out of hand. Not really better, but less scrolling? Never sure multiple files are the way to go without better patterns in place.
