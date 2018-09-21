@@ -5,7 +5,6 @@ import * as SpritesInfo from "../assets/sprites.json";
 import { SpriteSheet } from "./sprite-sheet";
 import { SpriteScreen, SpriteScale } from "./sprite-screen";
 import { PicoFont, FontColor } from "./pico-font-sheet";
-// import { GameLoop } from "./loop";
 
 type SpriteDesc = {
   x: number;
