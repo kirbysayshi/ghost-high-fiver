@@ -871,19 +871,19 @@ async function loadPlayerData(state: GameState) {
       }
     };
 
+    GameState.panels.push({
+      content: [
+        GameState.player.geo!.coords.latitude + ", ",
+        GameState.player.geo!.coords.longitude + ""
+      ],
+      icon: {
+        ...NEXT_PROMPT_ICON
+      }
+    });
+
     GameState.tapActions.push(
       () => {
-        GameState.panels.push({
-          content: [
-            GameState.player.geo!.coords.latitude + ", ",
-            GameState.player.geo!.coords.longitude + ""
-          ],
-          icon: {
-            ...NEXT_PROMPT_ICON
-          }
-        });
-      },
-      () => {
+        
         GameState.panels.push(mapPanel);
       }
     );
@@ -910,7 +910,9 @@ async function loadPlayerData(state: GameState) {
       }
     };
 
-    GameState.panels.push(locPanel);
+    GameState.tapActions.push(() => {
+      GameState.panels.push(locPanel);
+    });
 
     if (solved) {
       // location is alrady solved
