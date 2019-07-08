@@ -6,20 +6,20 @@ To dev:
 -------
 
 ```
-$ npm install
-$ npm run dev
+$ yarn install
+$ yarn run dev
 ```
 
 To make the final zip (and see how close you are to 13k limit):
 
 ```
-$ npm run zip
+$ yarn run zip
 ```
 
 To deploy to gh-pages branch:
 
 ```
-$ npm run deploy
+$ yarn run deploy
 ```
 
 

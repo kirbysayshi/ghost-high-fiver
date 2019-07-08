@@ -14,17 +14,17 @@
     "zip:adv": "./tools/advzip.sh && advzip -z -4 -i 60 dist/game.zip",
     "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.bmp *.js && popd",
     "zip:measure": "echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain",
-    "zip": "npm run clean && NODE_ENV=production npm run build && npm run build:terser && npm run assets:optimize && npm run zip:create && npm run zip:adv && npm run zip:measure",
-    "deploy": "npm run zip && gh-pages -d dist/",
+    "zip": "yarn run clean && NODE_ENV=production yarn run build && yarn run build:terser && yarn run assets:optimize && yarn run zip:create && yarn run zip:adv && yarn run zip:measure",
+    "deploy": "yarn run zip && gh-pages -d dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "gh-pages": "^1.2.0",
-    "parcel-bundler": "^1.9.7",
-    "terser": "^3.8.2",
-    "typescript": "^3.0.3"
+    "parcel-bundler": "^1.12.3",
+    "terser": "^4.1.0",
+    "typescript": "^3.5.2"
   },
   "dependencies": {
     "idb-keyval": "^3.1.0",

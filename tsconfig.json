@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "es2015",
     "target": "ES6",
     "jsx": "react",
     "noFallthroughCasesInSwitch": true,
@@ -9,5 +9,6 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "resolveJsonModule": true,
+    "moduleResolution": "node"
   }
 }
