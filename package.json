@@ -23,7 +23,7 @@
   "devDependencies": {
     "gh-pages": "^1.2.0",
     "parcel-bundler": "^1.12.3",
-    "terser": "^4.1.0",
+    "terser": "^4.8.1",
     "typescript": "^3.5.2"
   },
   "dependencies": {
